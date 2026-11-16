@@ -59,15 +59,22 @@ const tierColor = (tier: string) => {
   return 'purple';
 };
 
-const enemyColumns: TableColumnsType<InstantDeathEnemyRow> = [
+const buildEnemyColumns = (spans: Record<number, number>): TableColumnsType<InstantDeathEnemyRow> => [
   {
     title: 'ID',
     dataIndex: 'id',
     key: 'id',
     width: 110,
+    onCell: (_, index) => ({ rowSpan: spans[index ?? 0] ?? 0 }),
     render: (v: string) => <span className={styles.mono}>{v}</span>,
   },
-  { title: '地点', dataIndex: 'place', key: 'place', width: '18%' },
+  {
+    title: '地点',
+    dataIndex: 'place',
+    key: 'place',
+    width: '18%',
+    onCell: (_, index) => ({ rowSpan: spans[index ?? 0] ?? 0 }),
+  },
   { title: '敌人', dataIndex: 'enemy', key: 'enemy' },
   {
     title: '档位',
@@ -98,6 +105,27 @@ const InstantDeathView: React.FC = () => {
   }, [keyword]);
 
   const pageRows = filteredRows.slice((page - 1) * pageSize, page * pageSize);
+
+  // 同一 ID / 地点的连续行合并单元格
+  const spans = useMemo(() => {
+    const map: Record<number, number> = {};
+    let i = 0;
+    while (i < pageRows.length) {
+      let j = i;
+      while (
+        j + 1 < pageRows.length &&
+        pageRows[j + 1].id === pageRows[i].id &&
+        pageRows[j + 1].place === pageRows[i].place
+      ) {
+        j += 1;
+      }
+      map[i] = j - i + 1;
+      i = j + 1;
+    }
+    return map;
+  }, [pageRows]);
+
+  const enemyColumns = useMemo(() => buildEnemyColumns(spans), [spans]);
 
   return (
     <div className={styles.wrap} id="instant-death-mechanics">
@@ -146,7 +174,14 @@ const InstantDeathView: React.FC = () => {
           style={{ width: 240 }}
         />
       </div>
-      <Table columns={enemyColumns} dataSource={pageRows} rowKey="id" size="small" bordered pagination={false} />
+      <Table
+        columns={enemyColumns}
+        dataSource={pageRows}
+        rowKey={(row) => `${row.id}-${row.enemy}`}
+        size="small"
+        bordered
+        pagination={false}
+      />
       {filteredRows.length >= 20 ? (
         <CustomPagination
           currentPage={page}
