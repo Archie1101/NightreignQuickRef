@@ -10,3 +10,10 @@
   border-radius: 15px;
   box-shadow: 0 4px 20px var(--content-shadow);
 }
+
+.placeholder {
+  padding: 40px 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-text-2);
+}

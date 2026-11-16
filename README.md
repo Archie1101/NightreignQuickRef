@@ -70,6 +70,7 @@
 - [【深夜模式】全词条（遗物 + 武器 + 负面词条机制）](https://www.bilibili.com/video/BV1JLpxzmEdv)
 - [【DLC全词条】遗物 + 改动词条 + 可叠加性](https://www.bilibili.com/video/BV1sQmTBmEGP)
 - [1.03.4 更新内容（Reg版本）](https://www.bilibili.com/opus/1158092104127217697)
+- [黑夜君临 即死机制解析（by Supuritto）](https://www.bilibili.com/opus/1104523657103802386)
 - [种族特攻？武器隐藏属性！夜王特殊机制分析](https://www.bilibili.com/video/BV17HWCzhEYz)
 - [黑夜君临商人表 v1.02.4 修正版v2（by 小辛）](https://www.bilibili.com/video/BV1weyMBMEN3)
 - [黑夜君临 泪滴转职属性修正一览（by 模组工艺）](https://www.bilibili.com/video/BV1EB2rBhERC)

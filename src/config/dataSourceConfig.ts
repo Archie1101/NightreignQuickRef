@@ -143,6 +143,11 @@ export const DATA_SOURCE_CONFIG: DataSourceGroup[] = [
         icon: 'bilibili',
       },
       {
+        title: '黑夜君临 即死机制解析 by：Supuritto',
+        url: 'https://www.bilibili.com/opus/1104523657103802386',
+        icon: 'bilibili',
+      },
+      {
         title: '黑夜君临 夜王弱点属性累积值数据 更新DLC by：Supuritto',
         url: 'https://www.bilibili.com/opus/1126592307126075427',
         icon: 'bilibili',

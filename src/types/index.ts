@@ -377,6 +377,31 @@ export interface BlackFlameData {
   maxHp: { intro: string; rows: BlackFlameMaxHpRow[] };
   bossEffects: { intro: string; rows: BossHpEffectRow[] };
 }
+// ===== 即死与骤死（src/data/zh-CN/instant_death_data.json） =====
+
+export interface InstantDeathProbabilityRow {
+  hp: string;
+  t1: number;
+  t2: number;
+  t3: number;
+  t4: number;
+}
+
+export interface InstantDeathEnemyRow {
+  id: string;
+  place: string;
+  enemy: string;
+  tier: string;
+  note?: string;
+}
+
+export interface InstantDeathData {
+  meta: { title: string; author: string; url: string };
+  notes: string[];
+  probability: Record<'普通即死' | '高级即死', { desc: string; rows: InstantDeathProbabilityRow[] }>;
+  enemyRows: InstantDeathEnemyRow[];
+}
+
 // ===== 仇恨机制（src/data/zh-CN/aggro_data.json、aggro_spell_data.json） =====
 
 /** [名称, 冲击力, 基础仇恨值, 次数, 总仇恨] */

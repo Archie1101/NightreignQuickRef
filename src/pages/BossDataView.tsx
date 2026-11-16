@@ -52,7 +52,6 @@ import bleedResistance from '../assets/Resistances/hemorrhage-status-effect-elde
 import frostResistance from '../assets/Resistances/frostbite-status-effect-elden-ring-nightreign-wiki-guide-100px.png';
 import sleepResistance from '../assets/Resistances/sleep-status-effect-elden-ring-nightreign-wiki-guide-100px.png';
 import madnessResistance from '../assets/Resistances/madness-status-effect-elden-ring-nightreign-wiki-guide-100px.png';
-import deathBlightResistance from '../assets/Resistances/blight_status_effect_elden_ring_wiki_guide_100px.png';
 
 interface BossDataViewProps {
   activeSubTab?: string;
@@ -772,23 +771,6 @@ const BossDataView: React.FC<BossDataViewProps> = ({ activeSubTab, scope }) => {
           ),
           dataIndex: 'madnessResistance',
           key: 'madnessResistance',
-          width: 60,
-          align: 'center',
-          render: (value) => {
-            const calculatedValue = calculateResistance(value);
-            const originalClass = getResistanceClass(value); // 基于原始数值确定颜色
-            return <span className={`${styles.resistanceValue} ${originalClass}`}>{calculatedValue}</span>;
-          },
-        },
-        {
-          title: (
-            <div className={styles.resistanceTypeContainer}>
-              <Image src={deathBlightResistance} alt="咒死" width={18} height={18} preview={false} />
-              <span>咒死</span>
-            </div>
-          ),
-          dataIndex: 'deathBlightResistance',
-          key: 'deathBlightResistance',
           width: 60,
           align: 'center',
           render: (value) => {

@@ -150,7 +150,7 @@ export const NAV_PAGES: NavPage[] = [
     key: '机制',
     label: '机制',
     icon: '🛠️',
-    desc: '大盾数值与防御强度机制、黑焰烧血机制',
+    desc: '大盾数值与防御强度、黑焰烧血、即死与骤死',
     badges: ['局内'],
     group: '武器',
     sections: [
@@ -168,9 +168,15 @@ export const NAV_PAGES: NavPage[] = [
       },
       {
         key: '黑焰烧血机制',
-        label: '🔥 黑焰烧血机制',
+        label: '🔥 黑焰烧血',
         anchorId: 'black-flame-mechanics',
         tabKey: 'mechanics-blackflame',
+      },
+      {
+        key: '即死与骤死',
+        label: '💀 即死与骤死',
+        anchorId: 'instant-death-mechanics',
+        tabKey: 'mechanics-instant-death',
       },
     ],
   },

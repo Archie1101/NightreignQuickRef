@@ -15,6 +15,7 @@ export const LATEST_UPDATES: string[] = [
   '渡夜者能力/技艺/绝招效果',
   '执行者技艺',
   '仇恨机制',
+  '即死与骤死机制',
 ];
 
 export const ROADMAP_TODO: RoadmapTodoGroup[] = [
@@ -45,5 +46,9 @@ export const ROADMAP_TODO: RoadmapTodoGroup[] = [
   {
     page: '渡夜者能力/技艺/绝招效果',
     items: ['需要用 smithbox 验证数据'],
+  },
+  {
+    page: '夜王数据',
+    items: ['补充永夜"黑夜之魔"利普拉的技能说明'],
   },
 ];
