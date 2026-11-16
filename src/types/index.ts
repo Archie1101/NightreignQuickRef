@@ -397,6 +397,7 @@ export interface AilmentData {
   sensing: {
     title: string;
     formula: string;
+    serpentFormula: string;
     desc: string;
     note: string;
     curve: { threshold: number; maxVal: number; growVal: number };

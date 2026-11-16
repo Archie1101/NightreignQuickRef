@@ -31,7 +31,8 @@
       "threshold": 10,
       "maxVal": 99,
       "growVal": 160
-    }
+    },
+    "serpentFormula": "感应 × 300 / 99（%）"
   },
   "weaponRows": [
     {

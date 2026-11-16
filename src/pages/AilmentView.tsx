@@ -196,6 +196,10 @@ const AilmentView: React.FC = () => {
           <strong>公式：</strong>
           {DATA.sensing.formula}
         </p>
+        <p className={styles.paragraph}>
+          <strong>蛇弓专用异常补正公式：</strong>
+          {DATA.sensing.serpentFormula}
+        </p>
         <Table
           columns={bonusColumns}
           dataSource={CHARACTER_BONUSES}
