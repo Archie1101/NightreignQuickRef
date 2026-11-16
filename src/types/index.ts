@@ -377,6 +377,36 @@ export interface BlackFlameData {
   maxHp: { intro: string; rows: BlackFlameMaxHpRow[] };
   bossEffects: { intro: string; rows: BossHpEffectRow[] };
 }
+// ===== 异常值（src/data/zh-CN/ailment_data.json） =====
+
+export interface AilmentEffect {
+  name: string;
+  desc: string;
+}
+
+export interface AilmentWeaponRow {
+  type: string;
+  tier1: string;
+  tier2: string;
+  tier3: string;
+}
+
+export interface AilmentData {
+  meta: { title: string; author: string; note: string };
+  effects: AilmentEffect[];
+  sensing: {
+    title: string;
+    formula: string;
+    desc: string;
+    note: string;
+    curve: { threshold: number; maxVal: number; growVal: number };
+  };
+  weaponRows: AilmentWeaponRow[];
+  exceptions: string[];
+  otherRows: { name: string; value: string }[];
+  skillRows: { name: string; value: string }[];
+}
+
 // ===== 即死与骤死（src/data/zh-CN/instant_death_data.json） =====
 
 export interface InstantDeathProbabilityRow {

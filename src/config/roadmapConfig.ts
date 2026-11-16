@@ -16,6 +16,7 @@ export const LATEST_UPDATES: string[] = [
   '执行者技艺',
   '仇恨机制',
   '即死与骤死机制',
+  '异常值说明',
 ];
 
 export const ROADMAP_TODO: RoadmapTodoGroup[] = [
@@ -30,10 +31,6 @@ export const ROADMAP_TODO: RoadmapTodoGroup[] = [
   {
     page: '机制',
     items: ['大盾与防御强度待补充'],
-  },
-  {
-    page: '机制',
-    items: ['异常值说明'],
   },
   {
     page: '游戏机制',
