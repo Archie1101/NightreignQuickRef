@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { Input, Segmented, Table, Tag } from 'antd';
+import { Button, Checkbox, Input, Segmented, Table, Tag } from 'antd';
 import type { TableColumnsType } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
+import { FilterOutlined, SearchOutlined } from '@ant-design/icons';
 import deathJson from '../data/zh-CN/instant_death_data.json';
 import type { InstantDeathData, InstantDeathEnemyRow, InstantDeathProbabilityRow } from '../types';
 import CustomPagination from '../components/CustomPagination';
@@ -59,7 +59,21 @@ const tierColor = (tier: string) => {
   return 'purple';
 };
 
-const buildEnemyColumns = (spans: Record<number, number>): TableColumnsType<InstantDeathEnemyRow> => [
+const tierKey = (tier: string) => (!tier ? 'none' : tier.startsWith('X') ? 'X' : tier.trim()[0]);
+
+const TIER_FILTER_OPTIONS = [
+  { label: '1 档', value: '1' },
+  { label: '2 档', value: '2' },
+  { label: '3 档', value: '3' },
+  { label: '4 档', value: '4' },
+  { label: '不可即死', value: 'X' },
+];
+
+const buildEnemyColumns = (
+  spans: Record<number, number>,
+  tierFilter: string[],
+  onTierChange: (values: string[]) => void,
+): TableColumnsType<InstantDeathEnemyRow> => [
   {
     title: 'ID',
     dataIndex: 'id',
@@ -82,8 +96,43 @@ const buildEnemyColumns = (spans: Record<number, number>): TableColumnsType<Inst
     key: 'tier',
     width: 110,
     align: 'center',
+    filterDropdown: ({ confirm, clearFilters }) => (
+      <div className={styles.filterPanel}>
+        <Checkbox.Group
+          value={tierFilter}
+          options={TIER_FILTER_OPTIONS}
+          onChange={(values) => onTierChange(values as string[])}
+        />
+        <div className={styles.filterActions}>
+          <Button size="small" type="primary" onClick={() => confirm()}>
+            确定
+          </Button>
+          <Button
+            size="small"
+            onClick={() => {
+              onTierChange([]);
+              clearFilters?.();
+              confirm();
+            }}
+          >
+            重置
+          </Button>
+        </div>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <FilterOutlined style={{ color: filtered ? 'var(--theme-primary)' : undefined }} />
+    ),
+    filteredValue: tierFilter,
+    onFilter: () => true,
     render: (v: string) =>
-      v.startsWith('X') ? <Tag color="default">不可即死</Tag> : <Tag color={tierColor(v)}>{v}</Tag>,
+      !v ? (
+        <span className={styles.tierEmpty}>—</span>
+      ) : v.startsWith('X') ? (
+        <Tag color="default">不可即死</Tag>
+      ) : (
+        <Tag color={tierColor(v)}>{v}</Tag>
+      ),
   },
   { title: '备注', dataIndex: 'note', key: 'note', width: '20%', render: (v?: string) => v ?? '' },
 ];
@@ -93,16 +142,21 @@ const InstantDeathView: React.FC = () => {
   const [keyword, setKeyword] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [showUnkillable, setShowUnkillable] = useState(true);
+  const [tierFilter, setTierFilter] = useState<string[]>([]);
 
   const prob = DATA.probability[probTab];
 
   const filteredRows = useMemo(() => {
     const kw = keyword.trim();
-    if (!kw) return DATA.enemyRows;
-    return DATA.enemyRows.filter(
+    let rows = DATA.enemyRows;
+    if (!showUnkillable) rows = rows.filter((row) => !row.tier.startsWith('X'));
+    if (tierFilter.length > 0) rows = rows.filter((row) => tierFilter.includes(tierKey(row.tier)));
+    if (!kw) return rows;
+    return rows.filter(
       (row) => row.id.includes(kw) || row.place.includes(kw) || row.enemy.includes(kw) || (row.note ?? '').includes(kw),
     );
-  }, [keyword]);
+  }, [keyword, showUnkillable, tierFilter]);
 
   const pageRows = filteredRows.slice((page - 1) * pageSize, page * pageSize);
 
@@ -125,7 +179,14 @@ const InstantDeathView: React.FC = () => {
     return map;
   }, [pageRows]);
 
-  const enemyColumns = useMemo(() => buildEnemyColumns(spans), [spans]);
+  const enemyColumns = useMemo(
+    () =>
+      buildEnemyColumns(spans, tierFilter, (values) => {
+        setTierFilter(values);
+        setPage(1);
+      }),
+    [spans, tierFilter],
+  );
 
   return (
     <div className={styles.wrap} id="instant-death-mechanics">
@@ -162,17 +223,28 @@ const InstantDeathView: React.FC = () => {
       <h4 className={styles.heading}>敌人档位</h4>
       <div className={styles.toolbar}>
         <span className={styles.count}>共 {filteredRows.length} 条</span>
-        <Input
-          allowClear
-          placeholder="搜索地点 / 敌人 / ID"
-          prefix={<SearchOutlined />}
-          value={keyword}
-          onChange={(e) => {
-            setKeyword(e.target.value);
-            setPage(1);
-          }}
-          style={{ width: 240 }}
-        />
+        <div className={styles.toolbarRight}>
+          <Checkbox
+            checked={showUnkillable}
+            onChange={(e) => {
+              setShowUnkillable(e.target.checked);
+              setPage(1);
+            }}
+          >
+            显示不可即死
+          </Checkbox>
+          <Input
+            allowClear
+            placeholder="搜索地点 / 敌人 / ID"
+            prefix={<SearchOutlined />}
+            value={keyword}
+            onChange={(e) => {
+              setKeyword(e.target.value);
+              setPage(1);
+            }}
+            style={{ width: 240 }}
+          />
+        </div>
       </div>
       <Table
         columns={enemyColumns}
@@ -200,7 +272,7 @@ const InstantDeathView: React.FC = () => {
         <a href={DATA.meta.url} target="_blank" rel="noreferrer">
           《{DATA.meta.title}》
         </a>
-        。
+        ；敌人档位等数据参考 Smithbox 解包内容。
       </div>
     </div>
   );
