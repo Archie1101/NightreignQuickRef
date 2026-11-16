@@ -5,8 +5,66 @@ import { TableOutlined } from '@ant-design/icons';
 import ailmentJson from '../data/zh-CN/ailment_data.json';
 import type { AilmentData, AilmentEffect, AilmentWeaponRow } from '../types';
 import styles from '../styles/ailmentView.module.css';
+import hemorrhageIcon from '../assets/Resistances/hemorrhage-status-effect-elden-ring-nightreign-wiki-guide-100px.png';
+import frostbiteIcon from '../assets/Resistances/frostbite-status-effect-elden-ring-nightreign-wiki-guide-100px.png';
+import poisonIcon from '../assets/Resistances/poison-status-effect-elden-ring-nightreign-wiki-guide-100px.png';
+import scarletRotIcon from '../assets/Resistances/scarlet-rot-status-effect-elden-ring-nightreing-wiki-guide-100px.png';
+import sleepIcon from '../assets/Resistances/sleep-status-effect-elden-ring-nightreign-wiki-guide-100px.png';
+import madnessIcon from '../assets/Resistances/madness-status-effect-elden-ring-nightreign-wiki-guide-100px.png';
+import blightIcon from '../assets/Resistances/blight_status_effect_elden_ring_wiki_guide_100px.png';
+import trackerIcon from '../assets/icons/char/Wylder.svg';
+import guardianIcon from '../assets/icons/char/Guardian.svg';
+import ironeyeIcon from '../assets/icons/char/Ironeye.svg';
+import duchessIcon from '../assets/icons/char/Duchess.svg';
+import revenantIcon from '../assets/icons/char/Revenant.svg';
+import recluseIcon from '../assets/icons/char/Recluse.svg';
+import raiderIcon from '../assets/icons/char/Raider.svg';
+import executorIcon from '../assets/icons/char/Executor.svg';
+import scholarIcon from '../assets/icons/char/Scholar.svg';
+import undertakerIcon from '../assets/icons/char/Undertaker.svg';
 
 const DATA = ailmentJson as unknown as AilmentData;
+
+const EFFECT_ICONS: Record<string, string> = {
+  出血: hemorrhageIcon,
+  冰冻: frostbiteIcon,
+  冻伤: frostbiteIcon,
+  中毒: poisonIcon,
+  猩红腐败: scarletRotIcon,
+  腐败: scarletRotIcon,
+  睡眠: sleepIcon,
+  发狂: madnessIcon,
+  骤死: blightIcon,
+};
+
+const CHARACTER_ICONS: Record<string, string> = {
+  追踪者: trackerIcon,
+  守护者: guardianIcon,
+  铁之眼: ironeyeIcon,
+  女爵: duchessIcon,
+  复仇者: revenantIcon,
+  隐士: recluseIcon,
+  无赖: raiderIcon,
+  执行者: executorIcon,
+  学者: scholarIcon,
+  送葬者: undertakerIcon,
+};
+
+/** 按文本里出现的异常名找图标，供「其他异常 / 战技」的数值列使用 */
+const statusIconFor = (text: string) => {
+  const hit = Object.keys(EFFECT_ICONS).find((name) => text.includes(name));
+  return hit ? EFFECT_ICONS[hit] : undefined;
+};
+
+const WithIcon: React.FC<{ src?: string; chip?: boolean; children: React.ReactNode }> = ({ src, chip, children }) =>
+  src ? (
+    <span className={styles.iconLabel}>
+      <img src={src} alt="" className={[styles.cellIcon, chip ? styles.iconChip : ''].filter(Boolean).join(' ')} />
+      <span>{children}</span>
+    </span>
+  ) : (
+    <>{children}</>
+  );
 
 interface CharacterBonus {
   key: string;
@@ -37,7 +95,16 @@ const CHARACTER_BONUSES: CharacterBonus[] = Object.entries(CHARACTER_MODULES)
   .sort((a, b) => b.sense - a.sense);
 
 const bonusColumns: TableColumnsType<CharacterBonus> = [
-  { title: '角色', dataIndex: 'name', key: 'name' },
+  {
+    title: '角色',
+    dataIndex: 'name',
+    key: 'name',
+    render: (v: string) => (
+      <WithIcon src={CHARACTER_ICONS[v]} chip>
+        {v}
+      </WithIcon>
+    ),
+  },
   { title: '感应（15 级）', dataIndex: 'sense', key: 'sense', width: 130, align: 'center' },
   {
     title: '异常值加成',
@@ -58,7 +125,14 @@ const bonusColumns: TableColumnsType<CharacterBonus> = [
 ];
 
 const effectColumns: TableColumnsType<AilmentEffect> = [
-  { title: '异常', dataIndex: 'name', key: 'name', width: 140, align: 'center' },
+  {
+    title: '异常',
+    dataIndex: 'name',
+    key: 'name',
+    width: 160,
+    align: 'center',
+    render: (v: string) => <WithIcon src={EFFECT_ICONS[v]}>{v}</WithIcon>,
+  },
   { title: '效果', dataIndex: 'desc', key: 'desc' },
 ];
 
@@ -71,12 +145,22 @@ const weaponColumns: TableColumnsType<AilmentWeaponRow> = [
 
 const listColumns: TableColumnsType<{ name: string; value: string }> = [
   { title: '武器', dataIndex: 'name', key: 'name', width: '40%' },
-  { title: '异常值（基础）', dataIndex: 'value', key: 'value' },
+  {
+    title: '异常值（基础）',
+    dataIndex: 'value',
+    key: 'value',
+    render: (v: string) => <WithIcon src={statusIconFor(v)}>{v}</WithIcon>,
+  },
 ];
 
 const skillColumns: TableColumnsType<{ name: string; value: string }> = [
   { title: '战技', dataIndex: 'name', key: 'name', width: '28%' },
-  { title: '异常值', dataIndex: 'value', key: 'value' },
+  {
+    title: '异常值',
+    dataIndex: 'value',
+    key: 'value',
+    render: (v: string) => <WithIcon src={statusIconFor(v)}>{v}</WithIcon>,
+  },
 ];
 
 const AilmentView: React.FC = () => {

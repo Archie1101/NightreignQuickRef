@@ -87,3 +87,28 @@
   line-height: 1.75;
   color: var(--color-text-2);
 }
+
+.iconLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
+}
+
+.cellIcon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  object-fit: contain;
+}
+
+.iconChip {
+  box-sizing: border-box;
+  padding: 2px;
+  border-radius: 50%;
+  background: rgba(28, 34, 48, 0.85);
+}
+
+.cellIcon {
+  border-radius: 50%;
+}
