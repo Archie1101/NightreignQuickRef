@@ -150,10 +150,16 @@ export const NAV_PAGES: NavPage[] = [
     key: '机制',
     label: '机制',
     icon: '🛠️',
-    desc: '异常值、大盾数值与防御强度、黑焰烧血、即死与骤死',
+    desc: '武器补正适配度、异常值、大盾数值与防御强度、黑焰烧血、即死与骤死',
     badges: ['局内'],
     group: '武器',
     sections: [
+      {
+        key: '武器补正适配度',
+        label: '⚖️ 武器补正适配度',
+        anchorId: 'weapon-scaling',
+        tabKey: 'mechanics-weapon-scaling',
+      },
       {
         key: '异常值',
         label: '🧪 异常值',

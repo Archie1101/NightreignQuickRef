@@ -1,0 +1,290 @@
+{
+  "meta": {
+    "title": "黑夜君临 所有武器攻击力补正、基础削韧",
+    "author": "虚空蛋黄酱",
+    "note": "角色属性取站内 15 级数据；成长曲线、补正分布与公式来自《武器总结》的「武器补正 / 战技适配度 / 成长曲线」sheet。"
+  },
+  "curves": {
+    "physical": {
+      "name": "0 号曲线（物理面板）",
+      "stages": [
+        0,
+        24,
+        49,
+        74,
+        99
+      ],
+      "growth": [
+        0,
+        96,
+        168,
+        216,
+        240
+      ]
+    },
+    "elemental": {
+      "name": "4 号曲线（魔火雷圣面板）",
+      "stages": [
+        0,
+        99
+      ],
+      "growth": [
+        0,
+        300
+      ]
+    }
+  },
+  "weapons": [
+    {
+      "name": "短剑",
+      "poise": "3",
+      "physical": "13/73",
+      "elemental": "12/63/26",
+      "status": "12/63/39"
+    },
+    {
+      "name": "特殊：黄铜短刀",
+      "poise": "3",
+      "elemental": "力敏信 12/63/26",
+      "note": "唯一一把人物属性与武器属性有对应关系的武器；魔力、寒冷质变补正为力敏智信 10/55/26/26，且血、毒质变无感应补正"
+    },
+    {
+      "name": "直剑",
+      "poise": "5",
+      "physical": "50/50",
+      "elemental": "43/43/30",
+      "status": "43/43/45"
+    },
+    {
+      "name": "大剑",
+      "poise": "5.5",
+      "physical": "54/44",
+      "elemental": "46/38/30",
+      "status": "46/38/45"
+    },
+    {
+      "name": "特大剑",
+      "poise": "6",
+      "physical": "61/33",
+      "elemental": "52/29/29",
+      "status": "52/29/43"
+    },
+    {
+      "name": "刺剑",
+      "poise": "4",
+      "physical": "8/76",
+      "elemental": "7/65/26",
+      "status": "7/65/38"
+    },
+    {
+      "name": "重刺剑",
+      "poise": "5.5",
+      "physical": "38/58",
+      "elemental": "33/50/29",
+      "status": "33/50/44"
+    },
+    {
+      "name": "曲剑",
+      "poise": "5",
+      "physical": "28/64",
+      "elemental": "24/55/28",
+      "status": "24/55/42"
+    },
+    {
+      "name": "大曲剑",
+      "poise": "5.5",
+      "physical": "50/50",
+      "elemental": "43/43/30",
+      "status": "43/43/45"
+    },
+    {
+      "name": "刀",
+      "poise": "5",
+      "physical": "13/73",
+      "elemental": "12/63/26",
+      "status": "12/63/39"
+    },
+    {
+      "name": "双头剑",
+      "poise": "5",
+      "physical": "44/54",
+      "elemental": "38/46/30",
+      "status": "38/46/45"
+    },
+    {
+      "name": "槌",
+      "poise": "6",
+      "physical": "64/28",
+      "elemental": "55/24/28",
+      "status": "55/24/42"
+    },
+    {
+      "name": "特殊：棍棒",
+      "poise": "6",
+      "physical": "80/0",
+      "elemental": "68/0/24",
+      "status": "68/0/36"
+    },
+    {
+      "name": "大槌",
+      "poise": "6.5",
+      "physical": "76/8",
+      "elemental": "65/7/26",
+      "status": "65/7/38"
+    },
+    {
+      "name": "特殊：大棍棒",
+      "poise": "6.5",
+      "physical": "80/0",
+      "elemental": "68/0/24",
+      "status": "68/0/36"
+    },
+    {
+      "name": "连枷",
+      "poise": "6",
+      "physical": "38/58",
+      "elemental": "33/50/29",
+      "status": "33/50/44"
+    },
+    {
+      "name": "特殊：铁块连枷",
+      "poise": "6",
+      "physical": "54/44",
+      "elemental": "46/38/30",
+      "status": "46/38/45"
+    },
+    {
+      "name": "斧",
+      "poise": "5",
+      "physical": "54/44",
+      "elemental": "46/38/30",
+      "status": "46/38/45"
+    },
+    {
+      "name": "特殊：波纹剑",
+      "poise": "5",
+      "note": "感 80"
+    },
+    {
+      "name": "大斧",
+      "poise": "5.5",
+      "physical": "73/13",
+      "elemental": "63/12/26",
+      "status": "63/12/39"
+    },
+    {
+      "name": "矛",
+      "poise": "5",
+      "physical": "44/54",
+      "elemental": "38/46/30",
+      "status": "38/46/45"
+    },
+    {
+      "name": "特殊：泥人鱼叉",
+      "poise": "5",
+      "elemental": "力敏智 38/46/30",
+      "note": "所有质变均有智力补正；神圣为力敏智信 25/38/29/29，血、毒为力敏智感 25/38/29/44"
+    },
+    {
+      "name": "大矛",
+      "poise": "5.5",
+      "physical": "58/38",
+      "elemental": "50/33/29",
+      "status": "50/33/44"
+    },
+    {
+      "name": "特殊：大树矛",
+      "poise": "5.5",
+      "elemental": "力敏信 33/50/29",
+      "note": "所有质变均有信仰补正；魔力、寒冷为力敏智信 25/38/29/29，血、毒为力敏信感 25/38/29/44"
+    },
+    {
+      "name": "戟",
+      "poise": "5",
+      "physical": "54/44",
+      "elemental": "46/38/30",
+      "status": "46/38/45"
+    },
+    {
+      "name": "特殊：残缺波纹戟",
+      "poise": "5",
+      "note": "感 80"
+    },
+    {
+      "name": "特殊：守卫剑枪",
+      "poise": "5",
+      "physical": "13/73",
+      "elemental": "12/63/26",
+      "status": "12/63/39"
+    },
+    {
+      "name": "镰刀",
+      "poise": "5",
+      "physical": "22/68",
+      "elemental": "19/58/27",
+      "status": "19/58/41"
+    },
+    {
+      "name": "鞭子",
+      "poise": "4",
+      "physical": "18/70",
+      "elemental": "16/60/27",
+      "status": "16/60/40"
+    },
+    {
+      "name": "拳头",
+      "poise": "5",
+      "physical": "54/44",
+      "elemental": "46/38/30",
+      "status": "46/38/45"
+    },
+    {
+      "name": "特殊：复仇者的咒爪",
+      "poise": "5",
+      "elemental": "力敏信 13/0/73",
+      "note": "只有复仇者本人使用咒爪具有特殊的爪击，其他人只有拳套动作且倍率很低"
+    },
+    {
+      "name": "钩爪",
+      "poise": "4",
+      "physical": "28/64",
+      "elemental": "24/55/28",
+      "status": "24/55/42"
+    },
+    {
+      "name": "特大武器",
+      "poise": "7",
+      "physical": "80/0",
+      "elemental": "68/0/24",
+      "status": "68/0/36"
+    },
+    {
+      "name": "弓",
+      "poise": "2",
+      "physical": "8/76",
+      "elemental": "7/65/26"
+    },
+    {
+      "name": "特殊：蛇弓",
+      "poise": "2",
+      "status": "7/65/38",
+      "note": "自带中毒值补正使用 5 号曲线（数值同 4 号曲线）"
+    },
+    {
+      "name": "大弓",
+      "poise": "7",
+      "physical": "58/38",
+      "elemental": "40/30/30"
+    },
+    {
+      "name": "弩",
+      "poise": "2",
+      "note": "无补正"
+    },
+    {
+      "name": "弩炮",
+      "poise": "7",
+      "note": "无补正"
+    }
+  ]
+}

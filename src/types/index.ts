@@ -377,6 +377,27 @@ export interface BlackFlameData {
   maxHp: { intro: string; rows: BlackFlameMaxHpRow[] };
   bossEffects: { intro: string; rows: BossHpEffectRow[] };
 }
+// ===== 武器补正适配度（src/data/zh-CN/weapon_scaling_data.json） =====
+
+export interface WeaponScalingRow {
+  name: string;
+  poise: string;
+  physical?: string;
+  elemental?: string;
+  status?: string;
+  note?: string;
+}
+
+export interface WeaponScalingData {
+  meta: {
+    title: string;
+    author: string;
+    note: string;
+  };
+  curves: Record<'physical' | 'elemental', { name: string; stages: number[]; growth: number[] }>;
+  weapons: WeaponScalingRow[];
+}
+
 // ===== 异常值（src/data/zh-CN/ailment_data.json） =====
 
 export interface AilmentEffect {

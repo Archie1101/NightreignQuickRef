@@ -17,6 +17,7 @@ export const LATEST_UPDATES: string[] = [
   '仇恨机制',
   '即死与骤死机制',
   '异常值说明',
+  '武器补正适配度',
 ];
 
 export const ROADMAP_TODO: RoadmapTodoGroup[] = [
