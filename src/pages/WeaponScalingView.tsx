@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button, Checkbox, Drawer, Segmented, Select, Statistic, Table, Tag } from 'antd';
+import { Button, Checkbox, Drawer, Modal, Segmented, Select, Statistic, Table, Tag } from 'antd';
 import type { TableColumnsType } from 'antd';
 import { ExperimentOutlined, LineChartOutlined } from '@ant-design/icons';
 import { Line } from '@ant-design/plots';
@@ -40,6 +40,53 @@ const CHARACTER_ICONS: Record<string, string> = {
 
 const STAT_KEYS = ['力气', '敏捷', '智力', '信仰', '感应'] as const;
 const STAT_LABELS = ['力量', '灵巧', '智力', '信仰', '感应'] as const;
+
+interface CalcRow {
+  key: string;
+  attr: string;
+  stat: number;
+  weight: number;
+  growth: number;
+  coefficient: number;
+  contribution: number;
+}
+
+const calcColumns: TableColumnsType<CalcRow> = [
+  { title: '属性', dataIndex: 'attr', key: 'attr', width: 90 },
+  { title: '角色属性', dataIndex: 'stat', key: 'stat', width: 90, align: 'center' },
+  {
+    title: '补正权重',
+    dataIndex: 'weight',
+    key: 'weight',
+    width: 90,
+    align: 'center',
+    render: (value: number) => `${value}%`,
+  },
+  {
+    title: '曲线值',
+    dataIndex: 'growth',
+    key: 'growth',
+    width: 90,
+    align: 'right',
+    render: (value: number) => `${value.toFixed(2)}%`,
+  },
+  {
+    title: '系数',
+    dataIndex: 'coefficient',
+    key: 'coefficient',
+    width: 90,
+    align: 'right',
+    render: (value: number) => value.toFixed(4),
+  },
+  {
+    title: '贡献',
+    dataIndex: 'contribution',
+    key: 'contribution',
+    width: 100,
+    align: 'right',
+    render: (value: number) => value.toFixed(4),
+  },
+];
 
 const CHARACTER_MODULES = import.meta.glob('../data/character-info/*.json', {
   eager: true,
@@ -346,6 +393,7 @@ const WeaponScalingView: React.FC = () => {
   const [showUnreleased, setShowUnreleased] = useState(false);
   const [conversionOpen, setConversionOpen] = useState(false);
   const [conversions, setConversions] = useState<Record<string, ConversionState>>({});
+  const [calcName, setCalcName] = useState<string | null>(null);
   const [curveOpen, setCurveOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>(getCurrentTheme());
 
@@ -447,6 +495,29 @@ const WeaponScalingView: React.FC = () => {
 
   const best = rankings[0];
 
+  const calcRecord = rankings.find((character) => character.name === calcName);
+  const calcRows: CalcRow[] = calcRecord
+    ? STAT_LABELS.map((label, index) => {
+        const growth = curveValue(activeCurve, calcRecord.stats[index]);
+        const coefficient = growth / 100;
+        const weight = activeWeights[index] ?? 0;
+        return {
+          key: label,
+          attr: label,
+          stat: calcRecord.stats[index],
+          weight,
+          growth,
+          coefficient,
+          contribution: (weight / 100) * coefficient,
+        };
+      })
+    : [];
+  const calcTotal = 1 + calcRows.reduce((sum, row) => sum + row.contribution, 0);
+  const calcTerms = calcRows
+    .filter((row) => row.weight > 0)
+    .map((row) => `${(row.weight / 100).toFixed(2)} × ${row.coefficient.toFixed(4)}`);
+  const calcFormula = calcTerms.length > 0 ? `1 + ${calcTerms.join(' + ')} = ${calcTotal.toFixed(4)}` : '1.0000';
+
   const rankingColumns: TableColumnsType<(typeof rankings)[number]> = [
     {
       title: '角色',
@@ -477,7 +548,11 @@ const WeaponScalingView: React.FC = () => {
       width: 120,
       align: 'right' as const,
       sorter: (a: (typeof rankings)[number], b: (typeof rankings)[number]) => a.value - b.value,
-      render: (value: number) => <span className={styles.value}>×{value.toFixed(3)}</span>,
+      render: (value: number, record: (typeof rankings)[number]) => (
+        <Button type="link" size="small" className={styles.calcLink} onClick={() => setCalcName(record.name)}>
+          ×{value.toFixed(3)}
+        </Button>
+      ),
     },
   ];
 
@@ -720,6 +795,7 @@ const WeaponScalingView: React.FC = () => {
         {activeDesc ? <span className={styles.summaryText}>{activeDesc}</span> : null}
       </div>
 
+      <p className={styles.hint}>点击「适配度」倍率可查看逐项计算过程。</p>
       <Table columns={rankingColumns} dataSource={rankings} rowKey="key" size="small" bordered pagination={false} />
 
       <p className={styles.note}>
@@ -753,6 +829,37 @@ const WeaponScalingView: React.FC = () => {
         pagination={false}
         scroll={{ x: 900 }}
       />
+
+      <Modal
+        title={calcRecord ? `适配度计算 · ${calcRecord.name}` : '适配度计算'}
+        open={Boolean(calcName)}
+        onCancel={() => setCalcName(null)}
+        footer={null}
+        width={760}
+      >
+        {calcRecord ? (
+          <>
+            <p className={styles.hint}>
+              当前选择：{activeLabel}；曲线：{DATA.curves[activeCurve].name}
+            </p>
+            <p className={styles.hint}>
+              补正权重：
+              {calcRows
+                .filter((row) => row.weight > 0)
+                .map((row) => `${row.attr} ${row.weight}%`)
+                .join(' / ') || '无'}
+            </p>
+            <Table columns={calcColumns} dataSource={calcRows} rowKey="key" size="small" bordered pagination={false} />
+            <p className={styles.calcFormula}>
+              适配度 = {calcFormula} ≈ ×{calcRecord.value.toFixed(3)}
+            </p>
+            <p className={styles.note}>
+              曲线值 = 角色属性在成长曲线上的取值；系数 = 曲线值 ÷ 100；贡献 = 补正权重 ÷ 100 × 系数。适配度 = 1 +
+              各属性贡献之和。
+            </p>
+          </>
+        ) : null}
+      </Modal>
 
       <Drawer title="补正曲线" size={760} open={curveOpen} onClose={() => setCurveOpen(false)}>
         <p className={styles.hint}>
