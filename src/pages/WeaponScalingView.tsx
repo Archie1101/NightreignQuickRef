@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button, Checkbox, Drawer, Segmented, Select, Statistic, Table, Tag } from 'antd';
 import type { TableColumnsType } from 'antd';
-import { LineChartOutlined } from '@ant-design/icons';
+import { ExperimentOutlined, LineChartOutlined } from '@ant-design/icons';
 import { Line } from '@ant-design/plots';
 import scalingJson from '../data/zh-CN/weapon_scaling_data.json';
 import uniqueWeaponArts from '../data/zh-CN/unique_weapon_arts.json';
 import weaponArtCategoryHints from '../data/zh-CN/weapon_art_category_hints.json';
+import teardropJson from '../data/zh-CN/teardrop_conversion.json';
+import type { TeardropAffix, TeardropConversionData } from '../types';
 import { getCurrentTheme } from '../utils/themeUtils';
 import type { WeaponScalingData, WeaponScalingRow } from '../types';
 import styles from '../styles/weaponScalingView.module.css';
@@ -50,6 +52,12 @@ interface CharacterRow {
   stats: number[];
 }
 
+interface ConversionState {
+  affixA?: string;
+  affixB?: string;
+  lipula?: string;
+}
+
 const CHARACTERS: CharacterRow[] = Object.entries(CHARACTER_MODULES)
   .filter(([path]) => !path.includes('character_data'))
   .map(([, data]) => {
@@ -62,6 +70,27 @@ const CHARACTERS: CharacterRow[] = Object.entries(CHARACTER_MODULES)
       stats: STAT_KEYS.map((key) => Number(last[key])),
     };
   });
+
+const TEARDROP_DATA = teardropJson as unknown as TeardropConversionData;
+const TEARDROP_BY_NAME = new Map(TEARDROP_DATA.characters.map((character) => [character.name, character]));
+const AFFIX_STAT_KEYS = ['力气', '灵巧', '智力', '信仰', '感应'] as const;
+
+const shortAffixName = (name: string) => name.replace(/^【.*?】/, '');
+
+const applyAffixes = (base: number[], affixes: TeardropAffix[]): number[] => {
+  const result = [...base];
+  for (const affix of affixes) {
+    for (const [attr, value] of Object.entries(affix.boost)) {
+      const index = AFFIX_STAT_KEYS.indexOf(attr as (typeof AFFIX_STAT_KEYS)[number]);
+      if (index >= 0) result[index] += value;
+    }
+    for (const [attr, value] of Object.entries(affix.reduce)) {
+      const index = AFFIX_STAT_KEYS.indexOf(attr as (typeof AFFIX_STAT_KEYS)[number]);
+      if (index >= 0) result[index] -= value;
+    }
+  }
+  return result;
+};
 
 /** 成长曲线：分段线性插值，结果按百分比处理 */
 const curveValue = (curveKey: 'physical' | 'elemental', stat: number) => {
@@ -253,6 +282,8 @@ const WeaponScalingView: React.FC = () => {
   const [bHintKey, setBHintKey] = useState('厚重');
   const [bCurveKey, setBCurveKey] = useState<'physical' | 'elemental'>('physical');
   const [showUnreleased, setShowUnreleased] = useState(false);
+  const [conversionOpen, setConversionOpen] = useState(false);
+  const [conversions, setConversions] = useState<Record<string, ConversionState>>({});
   const [curveOpen, setCurveOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>(getCurrentTheme());
 
@@ -310,13 +341,40 @@ const WeaponScalingView: React.FC = () => {
     }
   };
 
+  const convertedCharacters = useMemo(
+    () =>
+      CHARACTERS.map((character) => {
+        const conversion = conversions[character.name];
+        if (!conversion) return character;
+        const teardrop = TEARDROP_BY_NAME.get(character.name);
+        if (conversion.lipula) {
+          const option = TEARDROP_DATA.lipula.options.find((item) => item.key === conversion.lipula);
+          if (option) {
+            return {
+              ...character,
+              stats: AFFIX_STAT_KEYS.map((key) => Number(option.stats[key] ?? 0)),
+            };
+          }
+        }
+        const affixes = [conversion.affixA, conversion.affixB]
+          .map((id) => teardrop?.affixes.find((affix) => affix.entryId === id))
+          .filter((affix): affix is TeardropAffix => Boolean(affix));
+        return { ...character, stats: applyAffixes(character.stats, affixes) };
+      }),
+    [conversions],
+  );
+
+  const conversionCount = Object.values(conversions).filter((item) => item.affixA || item.affixB || item.lipula).length;
+
   const rankings = useMemo(
     () =>
-      CHARACTERS.map((character) => ({
-        ...character,
-        value: adaptation(activeWeights, activeCurve, character.stats),
-      })).sort((a, b) => b.value - a.value),
-    [activeWeights, activeCurve],
+      convertedCharacters
+        .map((character) => ({
+          ...character,
+          value: adaptation(activeWeights, activeCurve, character.stats),
+        }))
+        .sort((a, b) => b.value - a.value),
+    [convertedCharacters, activeWeights, activeCurve],
   );
 
   const best = rankings[0];
@@ -331,6 +389,9 @@ const WeaponScalingView: React.FC = () => {
           <img src={CHARACTER_ICONS[name]} alt="" className={styles.charIcon} />
           <span>{name}</span>
           {index === 0 ? <Tag color="gold">最适配</Tag> : null}
+          {conversions[name] && (conversions[name].affixA || conversions[name].affixB || conversions[name].lipula) ? (
+            <Tag color="cyan">转职</Tag>
+          ) : null}
         </span>
       ),
     },
@@ -349,6 +410,105 @@ const WeaponScalingView: React.FC = () => {
       align: 'right' as const,
       sorter: (a: (typeof rankings)[number], b: (typeof rankings)[number]) => a.value - b.value,
       render: (value: number) => <span className={styles.value}>×{value.toFixed(3)}</span>,
+    },
+  ];
+
+  const updateConversion = (name: string, patch: Partial<ConversionState>) => {
+    setConversions((prev) => ({ ...prev, [name]: { ...prev[name], ...patch } }));
+  };
+
+  const conversionColumns: TableColumnsType<CharacterRow> = [
+    {
+      title: '角色',
+      dataIndex: 'name',
+      key: 'name',
+      width: 130,
+      render: (name: string) => (
+        <span className={styles.nameCell}>
+          <img src={CHARACTER_ICONS[name]} alt="" className={styles.charIcon} />
+          <span>{name}</span>
+        </span>
+      ),
+    },
+    {
+      title: '泪滴词条 A',
+      key: 'affixA',
+      width: 220,
+      render: (_, record) => {
+        const conversion = conversions[record.name] ?? {};
+        const teardrop = TEARDROP_BY_NAME.get(record.name);
+        return (
+          <Select
+            allowClear
+            value={conversion.affixA}
+            placeholder="不装备"
+            disabled={Boolean(conversion.lipula)}
+            options={(teardrop?.affixes ?? [])
+              .filter((affix) => affix.entryId !== conversion.affixB)
+              .map((affix) => ({ value: affix.entryId, label: shortAffixName(affix.name) }))}
+            onChange={(value) => updateConversion(record.name, { affixA: value })}
+            style={{ width: '100%' }}
+          />
+        );
+      },
+    },
+    {
+      title: '泪滴词条 B',
+      key: 'affixB',
+      width: 220,
+      render: (_, record) => {
+        const conversion = conversions[record.name] ?? {};
+        const teardrop = TEARDROP_BY_NAME.get(record.name);
+        return (
+          <Select
+            allowClear
+            value={conversion.affixB}
+            placeholder="不装备"
+            disabled={Boolean(conversion.lipula)}
+            options={(teardrop?.affixes ?? [])
+              .filter((affix) => affix.entryId !== conversion.affixA)
+              .map((affix) => ({ value: affix.entryId, label: shortAffixName(affix.name) }))}
+            onChange={(value) => updateConversion(record.name, { affixB: value })}
+            style={{ width: '100%' }}
+          />
+        );
+      },
+    },
+    {
+      title: '利普拉交易',
+      key: 'lipula',
+      width: 170,
+      render: (_, record) => {
+        const conversion = conversions[record.name] ?? {};
+        return (
+          <Select
+            allowClear
+            value={conversion.lipula}
+            placeholder="不交易"
+            options={TEARDROP_DATA.lipula.options.map((item) => ({
+              value: item.key,
+              label: item.name,
+            }))}
+            onChange={(value) =>
+              updateConversion(record.name, {
+                lipula: value,
+                affixA: undefined,
+                affixB: undefined,
+              })
+            }
+            style={{ width: '100%' }}
+          />
+        );
+      },
+    },
+    {
+      title: '修正后属性',
+      key: 'stats',
+      render: (_, record) => (
+        <span className={styles.statsCell}>
+          {record.stats.map((value, index) => `${STAT_LABELS[index]}${value}`).join(' / ')}
+        </span>
+      ),
     },
   ];
 
@@ -388,8 +548,7 @@ const WeaponScalingView: React.FC = () => {
         通用战技：A 类先选武器类型与质变（无质变、火焰、雷电、魔力、寒冷、神圣、血、毒）， 火焰 / 雷电 / 魔力 / 神圣 /
         寒冷自动使用 4 号曲线，其他质变与无质变使用 0 号曲线；B 类武器类型与质变均置灰， 改选 B 类补正类别，并可自由选择
         0 / 4 号曲线。专属战技按武器分类分组（已实装 {UNIQUE_OPTIONS.filter((option) => option.installed).length} / 全部{' '}
-        {UNIQUE_OPTIONS.length}）， 支持搜索；专属战技的 A / B 类均使用同一补正系数，不再区分。部分专属战技固定使用 4
-        号曲线，待补数据。
+        {UNIQUE_OPTIONS.length}）， 支持搜索；专属战技的 A / B 类均使用同一补正系数，不再区分。
       </p>
       <div className={styles.toolbar}>
         <Segmented
@@ -471,6 +630,9 @@ const WeaponScalingView: React.FC = () => {
             </Checkbox>
           </>
         )}
+        <Button icon={<ExperimentOutlined />} onClick={() => setConversionOpen(true)}>
+          泪滴转职{conversionCount > 0 ? `（${conversionCount}）` : ''}
+        </Button>
       </div>
 
       <div className={styles.summary}>
@@ -511,6 +673,29 @@ const WeaponScalingView: React.FC = () => {
         <CurveChart theme={theme} />
         <p className={styles.hint}>
           0 号节点：属性 0 / 24 / 49 / 74 / 99 → 成长 0 / 96 / 168 / 216 / 240；4 号节点：属性 0 → 99， 成长 0 → 300。
+        </p>
+      </Drawer>
+
+      <Drawer
+        title="泪滴转职"
+        size={1000}
+        open={conversionOpen}
+        onClose={() => setConversionOpen(false)}
+        extra={<Button onClick={() => setConversions({})}>全部重置</Button>}
+      >
+        <p className={styles.hint}>
+          给角色选择泪滴转职词条后，上表的属性与适配度会实时变化；同一角色最多装备两条词条，利普拉交易会覆盖词条。
+        </p>
+        <Table
+          columns={conversionColumns}
+          dataSource={convertedCharacters}
+          rowKey="name"
+          size="small"
+          bordered
+          pagination={false}
+        />
+        <p className={styles.note}>
+          基础属性取站内角色数据 15 级；词条数值为 Lv12 满值。利普拉的交易（平衡律法）会强制替换属性分配。
         </p>
       </Drawer>
 

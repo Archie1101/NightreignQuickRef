@@ -49,4 +49,8 @@ export const ROADMAP_TODO: RoadmapTodoGroup[] = [
     page: '夜王数据',
     items: ['补充永夜"黑夜之魔"利普拉的技能说明'],
   },
+  {
+    page: '武器补正适配度',
+    items: ['11把特殊武器补正'],
+  },
 ];
