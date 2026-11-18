@@ -386,6 +386,12 @@ export interface WeaponScalingRow {
   elemental?: string;
   status?: string;
   note?: string;
+  /** 武器类别，如短剑 / 槌 / 矛 */
+  category?: string;
+  /** 特殊武器按质变 key 直接给出的五维补正（力/敏/智/信/感） */
+  specialAffinities?: Record<string, number[]>;
+  /** 数据尚待确认的特殊武器 */
+  pending?: boolean;
 }
 
 export interface WeaponScalingData {

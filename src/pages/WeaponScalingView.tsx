@@ -148,14 +148,23 @@ const B_HINT_OPTIONS = Object.entries(weaponArtCategoryHints as Record<string, s
   weights: parseScaling(hint),
 }));
 
-const BASE_WEAPONS = DATA.weapons.filter(
-  (weapon) => !weapon.name.startsWith('特殊：') && (weapon.physical || weapon.elemental || weapon.status),
+const SELECTABLE_WEAPONS = DATA.weapons.filter(
+  (weapon) => !weapon.pending && (weapon.specialAffinities || weapon.physical || weapon.elemental || weapon.status),
 );
+const NORMAL_SELECTABLE = SELECTABLE_WEAPONS.filter((weapon) => !weapon.name.startsWith('特殊：'));
+const SPECIAL_SELECTABLE = SELECTABLE_WEAPONS.filter((weapon) => weapon.name.startsWith('特殊：'));
+const NORMAL_WEAPONS = DATA.weapons.filter((weapon) => !weapon.name.startsWith('特殊：'));
+const SPECIAL_WEAPONS = DATA.weapons.filter((weapon) => weapon.name.startsWith('特殊：'));
+
+const affinitiesForWeapon = (weapon: WeaponScalingRow | undefined) =>
+  weapon?.specialAffinities ? AFFINITIES.filter((affinity) => affinity.key in weapon.specialAffinities!) : AFFINITIES;
 
 /** 通用战技：按武器类型 + 质变取武器补正分布 */
 const weaponWeights = (weapon: WeaponScalingRow | undefined, affinity: Affinity): number[] => {
   const weights = [0, 0, 0, 0, 0];
   if (!weapon) return weights;
+  const special = weapon.specialAffinities?.[affinity.key];
+  if (special) return [...special];
   const raw = weapon[affinity.field as ScalingField];
   if (!raw) return weights;
   const values = (raw.match(/\d+/g) ?? []).map(Number);
@@ -232,6 +241,57 @@ const CurveChart: React.FC<{ theme: 'light' | 'dark' }> = ({ theme }) => {
   return <Line {...config} />;
 };
 
+const specialScalingGroups = (affinities: Record<string, number[]>) => {
+  const groups = new Map<string, string[]>();
+  for (const [key, values] of Object.entries(affinities)) {
+    const label = AFFINITIES.find((item) => item.key === key)?.label ?? key;
+    const value = values.join('/');
+    groups.set(value, [...(groups.get(value) ?? []), label]);
+  }
+  return [...groups.entries()].map(([value, labels]) => ({ value, labels }));
+};
+
+const specialColumns: TableColumnsType<WeaponScalingRow> = [
+  {
+    title: '武器',
+    dataIndex: 'name',
+    key: 'name',
+    width: '16%',
+    render: (name: string, record) => (
+      <span className={styles.nameCell}>
+        <span>{name.replace(/^特殊：/, '')}</span>
+        {record.pending ? <Tag color="warning">待确认</Tag> : null}
+      </span>
+    ),
+  },
+  { title: '类别', dataIndex: 'category', key: 'category', width: 80, align: 'center' },
+  { title: '基础削韧', dataIndex: 'poise', key: 'poise', width: 90, align: 'center' },
+  {
+    title: '补正分布（力/敏/智/信/感）',
+    key: 'scaling',
+    render: (_, record) => {
+      if (record.specialAffinities) {
+        return (
+          <div className={styles.affinityLines}>
+            {specialScalingGroups(record.specialAffinities).map((group) => (
+              <div key={group.value}>
+                {group.labels.join('、')}：{group.value}
+              </div>
+            ))}
+          </div>
+        );
+      }
+      const parts = [
+        record.physical ? `物理 ${record.physical}` : '',
+        record.elemental ? `元素 ${record.elemental}` : '',
+        record.status ? `异常 ${record.status}` : '',
+      ].filter(Boolean);
+      return parts.join(' · ') || '—';
+    },
+  },
+  { title: '备注', dataIndex: 'note', key: 'note', width: '30%', render: (v?: string) => v ?? '' },
+];
+
 const weaponColumns: TableColumnsType<WeaponScalingRow> = [
   { title: '武器', dataIndex: 'name', key: 'name', width: '17%' },
   { title: '基础削韧', dataIndex: 'poise', key: 'poise', width: 90, align: 'center' },
@@ -245,6 +305,7 @@ const weaponColumns: TableColumnsType<WeaponScalingRow> = [
     dataIndex: 'physical',
     key: 'physical',
     align: 'center',
+    render: (v?: string) => v ?? '—',
   },
   {
     title: (
@@ -257,6 +318,7 @@ const weaponColumns: TableColumnsType<WeaponScalingRow> = [
     dataIndex: 'elemental',
     key: 'elemental',
     align: 'center',
+    render: (v?: string) => v ?? '—',
   },
   {
     title: (
@@ -268,8 +330,8 @@ const weaponColumns: TableColumnsType<WeaponScalingRow> = [
     dataIndex: 'status',
     key: 'status',
     align: 'center',
+    render: (v?: string) => v ?? '—',
   },
-  { title: '备注', dataIndex: 'note', key: 'note', width: '22%', render: (v?: string) => v ?? '' },
 ];
 
 const WeaponScalingView: React.FC = () => {
@@ -304,8 +366,9 @@ const WeaponScalingView: React.FC = () => {
     [availableUnique, selectedKey],
   );
 
-  const affinity = AFFINITIES.find((item) => item.key === affinityKey) ?? AFFINITIES[0];
-  const weapon = BASE_WEAPONS.find((item) => item.name === weaponName) ?? BASE_WEAPONS[0];
+  const weapon = SELECTABLE_WEAPONS.find((item) => item.name === weaponName) ?? SELECTABLE_WEAPONS[0];
+  const allowedAffinities = affinitiesForWeapon(weapon);
+  const affinity = allowedAffinities.find((item) => item.key === affinityKey) ?? allowedAffinities[0] ?? AFFINITIES[0];
   const bHint = B_HINT_OPTIONS.find((item) => item.value === bHintKey) ?? B_HINT_OPTIONS[0];
   const universalWeights = skillClass === 'A' ? weaponWeights(weapon, affinity) : bHint.weights;
   const activeWeights = mode === 'universal' ? universalWeights : selected.weights;
@@ -333,6 +396,15 @@ const WeaponScalingView: React.FC = () => {
     }
     return [...map.entries()].map(([label, options]) => ({ label: `${label}（${options.length}）`, options }));
   }, [availableUnique]);
+
+  const handleWeaponChange = (name: string) => {
+    setWeaponName(name);
+    const next = SELECTABLE_WEAPONS.find((item) => item.name === name);
+    const allowed = affinitiesForWeapon(next);
+    if (!allowed.some((item) => item.key === affinityKey)) {
+      setAffinityKey(allowed[0]?.key ?? 'none');
+    }
+  };
 
   const handleModeChange = (nextMode: 'universal' | 'unique') => {
     setMode(nextMode);
@@ -366,16 +438,12 @@ const WeaponScalingView: React.FC = () => {
 
   const conversionCount = Object.values(conversions).filter((item) => item.affixA || item.affixB || item.lipula).length;
 
-  const rankings = useMemo(
-    () =>
-      convertedCharacters
-        .map((character) => ({
-          ...character,
-          value: adaptation(activeWeights, activeCurve, character.stats),
-        }))
-        .sort((a, b) => b.value - a.value),
-    [convertedCharacters, activeWeights, activeCurve],
-  );
+  const rankings = convertedCharacters
+    .map((character) => ({
+      ...character,
+      value: adaptation(activeWeights, activeCurve, character.stats),
+    }))
+    .sort((a, b) => b.value - a.value);
 
   const best = rankings[0];
 
@@ -571,8 +639,17 @@ const WeaponScalingView: React.FC = () => {
             />
             <Select
               value={weaponName}
-              onChange={setWeaponName}
-              options={BASE_WEAPONS.map((item) => ({ value: item.name, label: item.name }))}
+              onChange={handleWeaponChange}
+              options={[
+                {
+                  label: '普通武器',
+                  options: NORMAL_SELECTABLE.map((item) => ({ value: item.name, label: item.name })),
+                },
+                {
+                  label: '特殊武器',
+                  options: SPECIAL_SELECTABLE.map((item) => ({ value: item.name, label: item.name })),
+                },
+              ]}
               showSearch={{ optionFilterProp: 'label' }}
               disabled={skillClass === 'B'}
               style={{ minWidth: 180 }}
@@ -580,7 +657,7 @@ const WeaponScalingView: React.FC = () => {
             <Select
               value={affinity.key}
               onChange={setAffinityKey}
-              options={AFFINITIES.map((item) => ({ value: item.key, label: item.label }))}
+              options={allowedAffinities.map((item) => ({ value: item.key, label: item.label }))}
               disabled={skillClass === 'B'}
               style={{ minWidth: 150 }}
             />
@@ -653,11 +730,23 @@ const WeaponScalingView: React.FC = () => {
       <h4 className={styles.heading}>武器补正与基础削韧</h4>
       <p className={styles.hint}>
         补正分布按「力/敏（无质变、火焰、雷电）」「力/敏/智（魔力、寒冷）或
-        力/敏/信（神圣）」「力/敏/感（血、毒）」排列； 特殊武器单独列出。
+        力/敏/信（神圣）」「力/敏/感（血、毒）」排列；特殊武器单独列出。
       </p>
       <Table
         columns={weaponColumns}
-        dataSource={DATA.weapons.map((row) => ({ ...row, key: row.name }))}
+        dataSource={NORMAL_WEAPONS.map((row) => ({ ...row, key: row.name }))}
+        rowKey="key"
+        size="small"
+        bordered
+        pagination={false}
+        scroll={{ x: 900 }}
+      />
+
+      <h4 className={styles.heading}>特殊武器（{SPECIAL_WEAPONS.length}）</h4>
+      <p className={styles.hint}>特殊武器单独列出，补正值来自 Smithbox 解包的武器参数；部分武器只支持特定质变。</p>
+      <Table
+        columns={specialColumns}
+        dataSource={SPECIAL_WEAPONS.map((row) => ({ ...row, key: row.name }))}
         rowKey="key"
         size="small"
         bordered
