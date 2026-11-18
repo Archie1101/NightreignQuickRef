@@ -1,9 +1,12 @@
-import React, { useMemo, useState } from 'react';
-import { Checkbox, Segmented, Select, Statistic, Table, Tag } from 'antd';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Button, Checkbox, Drawer, Segmented, Select, Statistic, Table, Tag } from 'antd';
 import type { TableColumnsType } from 'antd';
+import { LineChartOutlined } from '@ant-design/icons';
+import { Line } from '@ant-design/plots';
 import scalingJson from '../data/zh-CN/weapon_scaling_data.json';
 import uniqueWeaponArts from '../data/zh-CN/unique_weapon_arts.json';
 import weaponArtCategoryHints from '../data/zh-CN/weapon_art_category_hints.json';
+import { getCurrentTheme } from '../utils/themeUtils';
 import type { WeaponScalingData, WeaponScalingRow } from '../types';
 import styles from '../styles/weaponScalingView.module.css';
 
@@ -166,6 +169,40 @@ const UNIQUE_OPTIONS: ArtOption[] = (() => {
   return [...map.values()];
 })();
 
+const CurveChart: React.FC<{ theme: 'light' | 'dark' }> = ({ theme }) => {
+  const data = [
+    ...DATA.curves.physical.stages.map((stat, index) => ({
+      stat,
+      value: DATA.curves.physical.growth[index],
+      curve: '0 号曲线（物理面板）',
+    })),
+    ...DATA.curves.elemental.stages.map((stat, index) => ({
+      stat,
+      value: DATA.curves.elemental.growth[index],
+      curve: '4 号曲线（魔火雷圣面板）',
+    })),
+  ];
+  const config = {
+    data,
+    xField: 'stat',
+    yField: 'value',
+    colorField: 'curve',
+    theme,
+    height: 340,
+    autoFit: true,
+    point: { sizeField: 4, shapeField: 'circle' },
+    scale: {
+      color: { range: ['#1677ff', '#fa8c16'] },
+    },
+    axis: {
+      x: { title: '属性值' },
+      y: { title: '成长值（%）' },
+    },
+    legend: { color: { position: 'bottom' as const } },
+  };
+  return <Line {...config} />;
+};
+
 const weaponColumns: TableColumnsType<WeaponScalingRow> = [
   { title: '武器', dataIndex: 'name', key: 'name', width: '17%' },
   { title: '基础削韧', dataIndex: 'poise', key: 'poise', width: 90, align: 'center' },
@@ -216,6 +253,15 @@ const WeaponScalingView: React.FC = () => {
   const [bHintKey, setBHintKey] = useState('厚重');
   const [bCurveKey, setBCurveKey] = useState<'physical' | 'elemental'>('physical');
   const [showUnreleased, setShowUnreleased] = useState(false);
+  const [curveOpen, setCurveOpen] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>(getCurrentTheme());
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => setTheme(getCurrentTheme()));
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['tomato-theme'] });
+    return () => observer.disconnect();
+  }, []);
 
   const availableUnique = useMemo(
     () => UNIQUE_OPTIONS.filter((option) => showUnreleased || option.installed),
@@ -309,6 +355,14 @@ const WeaponScalingView: React.FC = () => {
   return (
     <div className={styles.wrap} id="weapon-scaling">
       <div className={styles.formulaCard}>
+        <Button
+          className={styles.curveButton}
+          size="small"
+          icon={<LineChartOutlined />}
+          onClick={() => setCurveOpen(true)}
+        >
+          补正曲线
+        </Button>
         <p className={styles.formulaTitle}>适配度 = 1 + Σ（该属性补正占比 × 成长曲线系数）</p>
         <p className={styles.formulaText}>
           成长曲线系数 = 角色属性在成长曲线上的取值 ÷ 100；角色属性取站内 15 级数据，因此无需写死旧表数值。 1.00
@@ -448,6 +502,17 @@ const WeaponScalingView: React.FC = () => {
         pagination={false}
         scroll={{ x: 900 }}
       />
+
+      <Drawer title="补正曲线" size={760} open={curveOpen} onClose={() => setCurveOpen(false)}>
+        <p className={styles.hint}>
+          横轴为属性值，纵轴为成长值（%）；适配度系数 = 成长值 ÷ 100。两条曲线放在同一坐标系中对比： 0 号曲线按 5
+          个节点分段，4 号曲线为 0 → 99 的单段直线。
+        </p>
+        <CurveChart theme={theme} />
+        <p className={styles.hint}>
+          0 号节点：属性 0 / 24 / 49 / 74 / 99 → 成长 0 / 96 / 168 / 216 / 240；4 号节点：属性 0 → 99， 成长 0 → 300。
+        </p>
+      </Drawer>
 
       <div className={styles.source}>
         资料整理：{DATA.meta.author}《{DATA.meta.title}》；{DATA.meta.note}
