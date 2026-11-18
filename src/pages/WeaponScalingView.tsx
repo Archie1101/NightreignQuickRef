@@ -34,7 +34,7 @@ const CHARACTER_ICONS: Record<string, string> = {
 };
 
 const STAT_KEYS = ['力气', '敏捷', '智力', '信仰', '感应'] as const;
-const STAT_LABELS = ['力', '敏', '智', '信', '感'] as const;
+const STAT_LABELS = ['力量', '灵巧', '智力', '信仰', '感应'] as const;
 
 const CHARACTER_MODULES = import.meta.glob('../data/character-info/*.json', {
   eager: true,
@@ -96,23 +96,56 @@ const parseScaling = (text: string): number[] => {
   return weights;
 };
 
+const AFFINITIES = [
+  { key: 'none', label: '无质变', field: 'physical', curve: 'physical' },
+  { key: 'fire', label: '火焰质变', field: 'physical', curve: 'elemental' },
+  { key: 'lightning', label: '雷电质变', field: 'physical', curve: 'elemental' },
+  { key: 'magic', label: '魔力质变', field: 'elemental', curve: 'elemental', third: 'int' },
+  { key: 'cold', label: '寒冷质变', field: 'elemental', curve: 'elemental', third: 'int' },
+  { key: 'holy', label: '神圣质变', field: 'elemental', curve: 'elemental', third: 'faith' },
+  { key: 'blood', label: '血质变', field: 'status', curve: 'physical' },
+  { key: 'poison', label: '毒质变', field: 'status', curve: 'physical' },
+] as const;
+
+type Affinity = (typeof AFFINITIES)[number];
+type ScalingField = 'physical' | 'elemental' | 'status';
+
+const B_HINT_OPTIONS = Object.entries(weaponArtCategoryHints as Record<string, string>).map(([name, hint]) => ({
+  value: name,
+  label: `${name}（${hint.replace('B类补正：', '')}）`,
+  weights: parseScaling(hint),
+}));
+
+const BASE_WEAPONS = DATA.weapons.filter(
+  (weapon) => !weapon.name.startsWith('特殊：') && (weapon.physical || weapon.elemental || weapon.status),
+);
+
+/** 通用战技：按武器类型 + 质变取武器补正分布 */
+const weaponWeights = (weapon: WeaponScalingRow | undefined, affinity: Affinity): number[] => {
+  const weights = [0, 0, 0, 0, 0];
+  if (!weapon) return weights;
+  const raw = weapon[affinity.field as ScalingField];
+  if (!raw) return weights;
+  const values = (raw.match(/\d+/g) ?? []).map(Number);
+  weights[0] = values[0] ?? 0;
+  weights[1] = values[1] ?? 0;
+  if (affinity.field === 'elemental') {
+    const statIndex = 'third' in affinity && affinity.third === 'faith' ? 3 : 2;
+    weights[statIndex] = values[2] ?? 0;
+  } else if (affinity.field === 'status') {
+    weights[4] = values[2] ?? 0;
+  }
+  return weights;
+};
+
 interface ArtOption {
   value: string;
   label: string;
   desc?: string;
   weights: number[];
   installed: boolean;
+  group?: string;
 }
-
-const UNIVERSAL_OPTIONS: ArtOption[] = Object.entries(weaponArtCategoryHints as Record<string, string>).map(
-  ([name, hint]) => ({
-    value: `universal:${name}`,
-    label: name,
-    desc: hint,
-    weights: parseScaling(hint),
-    installed: true,
-  }),
-);
 
 const UNIQUE_OPTIONS: ArtOption[] = (() => {
   const map = new Map<string, ArtOption>();
@@ -124,9 +157,10 @@ const UNIQUE_OPTIONS: ArtOption[] = (() => {
     map.set(key, {
       value: `unique:${key}`,
       label: `${row['战技']}（${row['武器']}）`,
-      desc: `${row['分类']} · 补正 ${correction || '未标注'}`,
+      desc: `${row['分类']} · ${row['类型'] || '?'}类 · 补正 ${correction || '未标注'}`,
       weights: parseScaling(correction),
       installed: Boolean(correction),
+      group: row['分类'],
     });
   }
   return [...map.values()];
@@ -174,7 +208,13 @@ const weaponColumns: TableColumnsType<WeaponScalingRow> = [
 
 const WeaponScalingView: React.FC = () => {
   const [curveKey, setCurveKey] = useState<'physical' | 'elemental'>('physical');
-  const [selectedKey, setSelectedKey] = useState('universal:厚重');
+  const [mode, setMode] = useState<'universal' | 'unique'>('universal');
+  const [selectedKey, setSelectedKey] = useState('');
+  const [weaponName, setWeaponName] = useState('短剑');
+  const [affinityKey, setAffinityKey] = useState('none');
+  const [skillClass, setSkillClass] = useState<'A' | 'B'>('A');
+  const [bHintKey, setBHintKey] = useState('厚重');
+  const [bCurveKey, setBCurveKey] = useState<'physical' | 'elemental'>('physical');
   const [showUnreleased, setShowUnreleased] = useState(false);
 
   const availableUnique = useMemo(
@@ -182,28 +222,55 @@ const WeaponScalingView: React.FC = () => {
     [showUnreleased],
   );
 
-  const availableOptions = useMemo(() => [...UNIVERSAL_OPTIONS, ...availableUnique], [availableUnique]);
-
   const selected = useMemo(
-    () => availableOptions.find((option) => option.value === selectedKey) ?? availableOptions[0],
-    [availableOptions, selectedKey],
+    () => availableUnique.find((option) => option.value === selectedKey) ?? availableUnique[0],
+    [availableUnique, selectedKey],
   );
 
-  const artGroups = useMemo(
-    () => [
-      { label: '通用战技（质变）', options: UNIVERSAL_OPTIONS },
-      { label: `专用战技（${availableUnique.length}）`, options: availableUnique },
-    ],
-    [availableUnique],
-  );
+  const affinity = AFFINITIES.find((item) => item.key === affinityKey) ?? AFFINITIES[0];
+  const weapon = BASE_WEAPONS.find((item) => item.name === weaponName) ?? BASE_WEAPONS[0];
+  const bHint = B_HINT_OPTIONS.find((item) => item.value === bHintKey) ?? B_HINT_OPTIONS[0];
+  const universalWeights = skillClass === 'A' ? weaponWeights(weapon, affinity) : bHint.weights;
+  const activeWeights = mode === 'universal' ? universalWeights : selected.weights;
+  const activeCurve = mode === 'universal' ? (skillClass === 'A' ? affinity.curve : bCurveKey) : curveKey;
+  const activeLabel =
+    mode === 'universal'
+      ? skillClass === 'A'
+        ? `${weapon?.name ?? '武器'} · ${affinity.label} · A类`
+        : `B类（${bHintKey}）`
+      : selected.label;
+  const activeDesc =
+    mode === 'universal'
+      ? skillClass === 'A'
+        ? `${DATA.curves[affinity.curve].name} · 武器面板补正`
+        : `${DATA.curves[bCurveKey].name} · B类特殊补正`
+      : selected.desc;
+
+  const uniqueGroups = useMemo(() => {
+    const map = new Map<string, ArtOption[]>();
+    for (const option of availableUnique) {
+      const group = option.group ?? '其他';
+      const list = map.get(group) ?? [];
+      list.push(option);
+      map.set(group, list);
+    }
+    return [...map.entries()].map(([label, options]) => ({ label: `${label}（${options.length}）`, options }));
+  }, [availableUnique]);
+
+  const handleModeChange = (nextMode: 'universal' | 'unique') => {
+    setMode(nextMode);
+    if (nextMode === 'unique' && !selectedKey) {
+      setSelectedKey(availableUnique[0]?.value ?? '');
+    }
+  };
 
   const rankings = useMemo(
     () =>
       CHARACTERS.map((character) => ({
         ...character,
-        value: adaptation(selected.weights, curveKey, character.stats),
+        value: adaptation(activeWeights, activeCurve, character.stats),
       })).sort((a, b) => b.value - a.value),
-    [selected, curveKey],
+    [activeWeights, activeCurve],
   );
 
   const best = rankings[0];
@@ -224,7 +291,7 @@ const WeaponScalingView: React.FC = () => {
     ...STAT_LABELS.map((label, index) => ({
       title: label,
       key: `stat-${label}`,
-      width: 58,
+      width: 76,
       align: 'center' as const,
       render: (_: unknown, record: (typeof rankings)[number]) => record.stats[index],
     })),
@@ -248,53 +315,116 @@ const WeaponScalingView: React.FC = () => {
           为基准，越高表示该角色越吃这把武器的补正。
         </p>
         <p className={styles.formulaText}>
-          物理类用 0 号曲线（物里面板），元素类用 4 号曲线（魔火雷圣面板）；可在下方切换曲线后查看对应结果。
+          通用战技：A 类按「武器类型 + 质变」自动选曲线（火焰 / 雷电 / 魔力 / 寒冷 / 神圣 → 4 号，其他 → 0 号）；B
+          类武器类型与质变不参与计算，可自由选择 0 / 4 号曲线。专属战技可手动切换曲线。
         </p>
       </div>
 
-      <h4 className={styles.heading}>战技适配度</h4>
+      <div className={styles.affinityBox}>
+        <p className={styles.affinityTitle}>质变面板变化</p>
+        <ul className={styles.affinityList}>
+          {DATA.affinityNotes.map((note) => (
+            <li key={note}>{note}</li>
+          ))}
+        </ul>
+      </div>
+
+      <h4 className={styles.heading}>武器/战技适配度</h4>
       <p className={styles.hint}>
-        选项分两组：通用战技（{UNIVERSAL_OPTIONS.length}）、专用战技（已实装{' '}
-        {UNIQUE_OPTIONS.filter((option) => option.installed).length} / 全部 {UNIQUE_OPTIONS.length}，当前可选{' '}
-        {availableUnique.length}）；支持搜索，未标注补正的专用战技需勾选「显示未实装」。
+        通用战技：A 类先选武器类型与质变（无质变、火焰、雷电、魔力、寒冷、神圣、血、毒）， 火焰 / 雷电 / 魔力 / 神圣 /
+        寒冷自动使用 4 号曲线，其他质变与无质变使用 0 号曲线；B 类武器类型与质变均置灰， 改选 B 类补正类别，并可自由选择
+        0 / 4 号曲线。专属战技按武器分类分组（已实装 {UNIQUE_OPTIONS.filter((option) => option.installed).length} / 全部{' '}
+        {UNIQUE_OPTIONS.length}）， 支持搜索；专属战技的 A / B 类均使用同一补正系数，不再区分。部分专属战技固定使用 4
+        号曲线，待补数据。
       </p>
       <div className={styles.toolbar}>
         <Segmented
-          value={curveKey}
-          onChange={(value) => setCurveKey(value as 'physical' | 'elemental')}
+          value={mode}
+          onChange={(value) => handleModeChange(value as 'universal' | 'unique')}
           options={[
-            { label: '0 号曲线 · 物理', value: 'physical' },
-            { label: '4 号曲线 · 元素', value: 'elemental' },
+            { label: '通用战技', value: 'universal' },
+            { label: '专属战技', value: 'unique' },
           ]}
         />
-        <Select
-          value={selected.value}
-          onChange={setSelectedKey}
-          options={artGroups}
-          showSearch={{ optionFilterProp: 'label' }}
-          optionRender={(option) => {
-            const data = option.data as unknown as ArtOption;
-            return (
-              <div className={styles.optionRow}>
-                <span>{option.label}</span>
-                {data.desc ? <span className={styles.optionDesc}>{data.desc}</span> : null}
-              </div>
-            );
-          }}
-          style={{ minWidth: 340 }}
-          popupMatchSelectWidth={420}
-        />
-        <Checkbox checked={showUnreleased} onChange={(e) => setShowUnreleased(e.target.checked)}>
-          显示未实装
-        </Checkbox>
+        {mode === 'universal' ? (
+          <>
+            <Segmented
+              value={skillClass}
+              onChange={(value) => setSkillClass(value as 'A' | 'B')}
+              options={[
+                { label: 'A类', value: 'A' },
+                { label: 'B类', value: 'B' },
+              ]}
+            />
+            <Select
+              value={weaponName}
+              onChange={setWeaponName}
+              options={BASE_WEAPONS.map((item) => ({ value: item.name, label: item.name }))}
+              showSearch={{ optionFilterProp: 'label' }}
+              disabled={skillClass === 'B'}
+              style={{ minWidth: 180 }}
+            />
+            <Select
+              value={affinity.key}
+              onChange={setAffinityKey}
+              options={AFFINITIES.map((item) => ({ value: item.key, label: item.label }))}
+              disabled={skillClass === 'B'}
+              style={{ minWidth: 150 }}
+            />
+            {skillClass === 'B' ? (
+              <>
+                <Segmented
+                  value={bCurveKey}
+                  onChange={(value) => setBCurveKey(value as 'physical' | 'elemental')}
+                  options={[
+                    { label: '0 号曲线', value: 'physical' },
+                    { label: '4 号曲线', value: 'elemental' },
+                  ]}
+                />
+                <Select value={bHintKey} onChange={setBHintKey} options={B_HINT_OPTIONS} style={{ minWidth: 190 }} />
+              </>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <Segmented
+              value={curveKey}
+              onChange={(value) => setCurveKey(value as 'physical' | 'elemental')}
+              options={[
+                { label: '0 号曲线 · 物理', value: 'physical' },
+                { label: '4 号曲线 · 元素', value: 'elemental' },
+              ]}
+            />
+            <Select
+              value={selected.value}
+              onChange={setSelectedKey}
+              options={uniqueGroups}
+              showSearch={{ optionFilterProp: 'label' }}
+              optionRender={(option) => {
+                const data = option.data as unknown as ArtOption;
+                return (
+                  <div className={styles.optionRow}>
+                    <span>{option.label}</span>
+                    {data.desc ? <span className={styles.optionDesc}>{data.desc}</span> : null}
+                  </div>
+                );
+              }}
+              style={{ minWidth: 360 }}
+              popupMatchSelectWidth={460}
+            />
+            <Checkbox checked={showUnreleased} onChange={(e) => setShowUnreleased(e.target.checked)}>
+              显示未实装
+            </Checkbox>
+          </>
+        )}
       </div>
 
       <div className={styles.summary}>
-        <Statistic title={selected.label} value={best.value} precision={3} prefix="×" />
+        <Statistic title={activeLabel} value={best.value} precision={3} prefix="×" />
         <span className={styles.summaryText}>
           最适配：{best.name}（{STAT_LABELS.map((label, i) => `${label}${best.stats[i]}`).join(' / ')}）
         </span>
-        {selected.desc ? <span className={styles.summaryText}>{selected.desc}</span> : null}
+        {activeDesc ? <span className={styles.summaryText}>{activeDesc}</span> : null}
       </div>
 
       <Table columns={rankingColumns} dataSource={rankings} rowKey="key" size="small" bordered pagination={false} />
