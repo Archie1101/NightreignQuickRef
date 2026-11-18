@@ -419,6 +419,13 @@ export interface AilmentWeaponRow {
   tier3: string;
 }
 
+export interface AilmentCurve {
+  key: string;
+  name: string;
+  stages: number[];
+  growth: number[];
+}
+
 export interface AilmentData {
   meta: { title: string; author: string; note: string };
   effects: AilmentEffect[];
@@ -434,6 +441,7 @@ export interface AilmentData {
   exceptions: string[];
   otherRows: { name: string; value: string }[];
   skillRows: { name: string; value: string }[];
+  curves: AilmentCurve[];
 }
 
 // ===== 即死与骤死（src/data/zh-CN/instant_death_data.json） =====

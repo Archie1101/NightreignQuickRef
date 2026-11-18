@@ -112,3 +112,9 @@
 .cellIcon {
   border-radius: 50%;
 }
+
+.sectionActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
