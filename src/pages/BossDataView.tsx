@@ -13,12 +13,14 @@ import { throttle } from 'lodash';
 import styles from '../styles/bossDataView.module.css';
 import EnemyRaceSection from './bossDataView/EnemyRaceSection';
 import WeaknessSection from './bossDataView/WeaknessSection';
+import LipulaSkills from './bossDataView/LipulaSkills';
 import {
   curseData,
   getAbsorptionClass,
   getResistanceClass,
   getLocationColor,
   lipulaTradesData,
+  lipulaNotes,
   processSinnerData,
 } from './bossDataView/data';
 import { lipulaColumns, sinnerColumns, specialEventColumns, wildBossColumns } from './bossDataView/columns';
@@ -65,6 +67,7 @@ type BossScope = '夜王' | '地图';
 const TAB_SCOPE: Record<string, BossScope> = {
   'boss-data': '夜王',
   'sinner-data': '夜王',
+  'lipula-skills': '夜王',
   'lipula-trades': '夜王',
   'weakness-data': '夜王',
   'wild-boss-data': '地图',
@@ -793,25 +796,6 @@ const BossDataView: React.FC<BossDataViewProps> = ({ activeSubTab, scope }) => {
     <div className="footer-text">野生Boss数据：包含各种敌人和Boss的吸收值和抗性（异常耐受上限）数据</div>
   );
 
-  // 利普拉的交易选项
-  const lipulaFooter = () => (
-    <div className="footer-text">
-      <div>
-        ◦
-        炼金碎片小：随羊头施法后掉落，捡起恢复20HP，减少发狂累积量表55，并且获得炼金碎片buff—物理攻击x1.05、受到的发狂累积量x0.7，持续10s
-      </div>
-      <div>
-        ◦
-        炼金碎片大：随罪人死亡后掉落，捡起恢复4%+120HP，减少发狂累积量表999(等于清除)，获得炼金碎片buff2—物理攻击x1.05、受到的发狂累积量x0.8，持续20s
-      </div>
-      <div>
-        ◦
-        恶魔的眼界：将随意累积发狂量表。具体效果为17s后睁眼，睁眼累积发狂值15/0.35s，持续7s。结束后闭眼17s，然后再次睁眼。睁眼累积发狂值15/0.7s，持续7s
-      </div>
-      <div>◦ 罪人金身buff：第一层加20%攻击，后续每层加2%攻击</div>
-    </div>
-  );
-
   // 特殊事件及地形效果表格列定义
   // 加载特殊事件数据
   useEffect(() => {
@@ -1051,10 +1035,19 @@ const BossDataView: React.FC<BossDataViewProps> = ({ activeSubTab, scope }) => {
               ),
             },
             {
+              key: 'lipula-skills',
+              label: '💀 永夜利普拉技能',
+              children: <LipulaSkills onOpenSinners={() => setActiveBossTab('sinner-data')} />,
+            },
+            {
               key: 'lipula-trades',
               label: '⚖️ 利普拉的交易(Boss战)',
               children: (
                 <div id="lipula-trades">
+                  <p className={styles.lipulaHint}>
+                    与利普拉交易后，Boss 战会按所选交易生效；前五项为强制属性分配，示例为角色 15
+                    级时的属性值，其余为战斗中的增益或代价。Buff 与具体数值来自 Smithbox 的 SpEffectParam 解包。
+                  </p>
                   <Table
                     columns={lipulaColumns}
                     dataSource={lipulaTradesData}
@@ -1062,8 +1055,15 @@ const BossDataView: React.FC<BossDataViewProps> = ({ activeSubTab, scope }) => {
                     pagination={false}
                     size="small"
                     bordered
-                    footer={lipulaFooter}
                   />
+                  <div className={styles.lipulaNotes}>
+                    <div className={styles.lipulaNotesTitle}>补充说明</div>
+                    {lipulaNotes.map((note) => (
+                      <div className={styles.lipulaNoteItem} key={note.title}>
+                        <strong>{note.title}</strong>：{note.desc}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ),
             },

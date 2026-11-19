@@ -25,6 +25,8 @@ import {
   getTypeColor,
   processSinnerData,
   type LipulaTrade,
+  type LipulaStats,
+  type LipulaBuff,
   type SinnerData,
 } from './data';
 
@@ -528,18 +530,53 @@ export const lipulaColumns: ColumnsType<LipulaTrade> = [
     dataIndex: 'effect',
     key: 'effect',
     align: 'left',
-    render: (text, record) => (
-      <div>
-        <div>{text}</div>
-        {record.stats && (
-          <div style={{ marginTop: 4 }}>
-            角色15级时加点示例：血量 {record.stats.hp}｜专注 {record.stats.fp}｜耐力 {record.stats.stamina}｜力气{' '}
-            {record.stats.str}｜敏捷 {record.stats.dex}｜智力 {record.stats.intl}｜信仰 {record.stats.fth}｜感应{' '}
-            {record.stats.arc}
-          </div>
-        )}
-      </div>
-    ),
+  },
+  {
+    title: 'Buff / 具体数值',
+    dataIndex: 'buff',
+    key: 'buff',
+    width: 360,
+    render: (buff?: LipulaBuff) =>
+      buff ? (
+        <div className={styles.lipulaBuff}>
+          <Tag color="purple">{buff.name}</Tag>
+          <ul className={styles.lipulaBuffEffects}>
+            {buff.effects.map((effect) => (
+              <li key={effect}>{effect}</li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <span className={styles.emptyCell}>—</span>
+      ),
+  },
+  {
+    title: '角色 15 级属性示例',
+    dataIndex: 'stats',
+    key: 'stats',
+    width: 300,
+    render: (stats?: LipulaStats) =>
+      stats ? (
+        <div className={styles.lipulaStats}>
+          {[
+            ['血量', stats.hp],
+            ['专注', stats.fp],
+            ['耐力', stats.stamina],
+            ['力气', stats.str],
+            ['敏捷', stats.dex],
+            ['智力', stats.intl],
+            ['信仰', stats.fth],
+            ['感应', stats.arc],
+          ].map(([label, value]) => (
+            <span className={styles.lipulaStat} key={label}>
+              <span>{label}</span>
+              <strong>{value}</strong>
+            </span>
+          ))}
+        </div>
+      ) : (
+        <span className={styles.emptyCell}>—</span>
+      ),
   },
 ];
 

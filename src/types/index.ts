@@ -377,6 +377,27 @@ export interface BlackFlameData {
   maxHp: { intro: string; rows: BlackFlameMaxHpRow[] };
   bossEffects: { intro: string; rows: BossHpEffectRow[] };
 }
+// ===== 永夜利普拉技能（src/data/zh-CN/night_lord_lipula_skills.json） =====
+
+export interface LipulaSkill {
+  key: string;
+  title: string;
+  desc: string;
+  values?: string[];
+  link?: string;
+}
+
+export interface LipulaSkillNote {
+  title: string;
+  desc: string;
+}
+
+export interface LipulaSkillsData {
+  meta: { title: string; source: string };
+  skills: LipulaSkill[];
+  notes: LipulaSkillNote[];
+}
+
 // ===== 武器补正适配度（src/data/zh-CN/weapon_scaling_data.json） =====
 
 export interface WeaponScalingRow {
