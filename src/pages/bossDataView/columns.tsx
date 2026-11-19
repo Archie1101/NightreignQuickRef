@@ -25,7 +25,6 @@ import {
   getTypeColor,
   processSinnerData,
   type LipulaTrade,
-  type LipulaStats,
   type LipulaBuff,
   type SinnerData,
 } from './data';
@@ -530,6 +529,33 @@ export const lipulaColumns: ColumnsType<LipulaTrade> = [
     dataIndex: 'effect',
     key: 'effect',
     align: 'left',
+    render: (text: string, record) => (
+      <div>
+        <div>{text}</div>
+        {record.stats ? (
+          <div className={styles.lipulaStatsBlock}>
+            <div className={styles.lipulaStatsLabel}>15 级属性示例</div>
+            <div className={styles.lipulaStats}>
+              {[
+                ['血量', record.stats.hp],
+                ['专注', record.stats.fp],
+                ['耐力', record.stats.stamina],
+                ['力气', record.stats.str],
+                ['敏捷', record.stats.dex],
+                ['智力', record.stats.intl],
+                ['信仰', record.stats.fth],
+                ['感应', record.stats.arc],
+              ].map(([label, value]) => (
+                <span className={styles.lipulaStat} key={label}>
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    ),
   },
   {
     title: 'Buff / 具体数值',
@@ -545,34 +571,6 @@ export const lipulaColumns: ColumnsType<LipulaTrade> = [
               <li key={effect}>{effect}</li>
             ))}
           </ul>
-        </div>
-      ) : (
-        <span className={styles.emptyCell}>—</span>
-      ),
-  },
-  {
-    title: '角色 15 级属性示例',
-    dataIndex: 'stats',
-    key: 'stats',
-    width: 300,
-    render: (stats?: LipulaStats) =>
-      stats ? (
-        <div className={styles.lipulaStats}>
-          {[
-            ['血量', stats.hp],
-            ['专注', stats.fp],
-            ['耐力', stats.stamina],
-            ['力气', stats.str],
-            ['敏捷', stats.dex],
-            ['智力', stats.intl],
-            ['信仰', stats.fth],
-            ['感应', stats.arc],
-          ].map(([label, value]) => (
-            <span className={styles.lipulaStat} key={label}>
-              <span>{label}</span>
-              <strong>{value}</strong>
-            </span>
-          ))}
         </div>
       ) : (
         <span className={styles.emptyCell}>—</span>

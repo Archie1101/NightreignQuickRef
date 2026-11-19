@@ -208,6 +208,11 @@ export const DATA_SOURCE_CONFIG: DataSourceGroup[] = [
         url: 'https://api.xiaoheihe.cn/v3/bbs/app/api/web/share?h_camp=link&h_session_id=WnAl0U54uSJoMc6y&h_src=YXBwX3NoYXJl&link_id=aa6371e96491&new_post_share_style_v2=0',
         icon: 'link',
       },
+      {
+        title: '简单用训练场MOD选了选山羊的buff',
+        url: 'https://api.xiaoheihe.cn/v3/bbs/app/api/web/share?h_camp=link&h_src=YXBwX3NoYXJl&link_id=32ff72786e0c&new_post_share_style_v2=1',
+        icon: 'link',
+      },
     ],
   },
 ];

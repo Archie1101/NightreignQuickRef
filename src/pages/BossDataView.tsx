@@ -14,16 +14,15 @@ import styles from '../styles/bossDataView.module.css';
 import EnemyRaceSection from './bossDataView/EnemyRaceSection';
 import WeaknessSection from './bossDataView/WeaknessSection';
 import LipulaSkills from './bossDataView/LipulaSkills';
+import LipulaTrades from './bossDataView/LipulaTrades';
 import {
   curseData,
   getAbsorptionClass,
   getResistanceClass,
   getLocationColor,
-  lipulaTradesData,
-  lipulaNotes,
   processSinnerData,
 } from './bossDataView/data';
-import { lipulaColumns, sinnerColumns, specialEventColumns, wildBossColumns } from './bossDataView/columns';
+import { sinnerColumns, specialEventColumns, wildBossColumns } from './bossDataView/columns';
 
 // 导入boss图片
 import nightOfTheBeast from '../assets/BossRelics/night-of-the-beast.avif';
@@ -73,6 +72,22 @@ const TAB_SCOPE: Record<string, BossScope> = {
   'wild-boss-data': '地图',
   'enemy-race-data': '地图',
   'special-events': '地图',
+};
+
+const TAB_ORDER = [
+  'boss-data',
+  'weakness-data',
+  'lipula-trades',
+  'sinner-data',
+  'lipula-skills',
+  'wild-boss-data',
+  'enemy-race-data',
+  'special-events',
+];
+
+const tabOrderIndex = (key: unknown) => {
+  const index = TAB_ORDER.indexOf(String(key));
+  return index >= 0 ? index : 99;
 };
 
 const scopeOfTab = (tab: string): BossScope => TAB_SCOPE[tab] ?? '夜王';
@@ -788,7 +803,10 @@ const BossDataView: React.FC<BossDataViewProps> = ({ activeSubTab, scope }) => {
 
   // 罪人装备配置表格列定义
   const sinnerFooter = () => (
-    <div className="footer-text">*双人1.1倍血量/三人1.2倍血量 *每个NPC基础数据均为满级 *每个NPC自带仇恨-6的BUFF</div>
+    <div className="footer-text">
+      <div>*双人1.1倍血量/三人1.2倍血量 *每个NPC基础数据均为满级 *每个NPC自带仇恨-6的BUFF</div>
+      <div>◦ 罪人金身 buff：第一层加 20% 攻击，后续每层加 2% 攻击</div>
+    </div>
   );
 
   // 野生Boss数据表格列定义
@@ -1018,7 +1036,7 @@ const BossDataView: React.FC<BossDataViewProps> = ({ activeSubTab, scope }) => {
             },
             {
               key: 'sinner-data',
-              label: '🐐 永夜山羊召唤罪人详情',
+              label: '🐐 永夜利普拉召唤罪人',
               children: (
                 <div id="sinner-details">
                   <Table
@@ -1037,35 +1055,12 @@ const BossDataView: React.FC<BossDataViewProps> = ({ activeSubTab, scope }) => {
             {
               key: 'lipula-skills',
               label: '💀 永夜利普拉技能',
-              children: <LipulaSkills onOpenSinners={() => setActiveBossTab('sinner-data')} />,
+              children: <LipulaSkills />,
             },
             {
               key: 'lipula-trades',
-              label: '⚖️ 利普拉的交易(Boss战)',
-              children: (
-                <div id="lipula-trades">
-                  <p className={styles.lipulaHint}>
-                    与利普拉交易后，Boss 战会按所选交易生效；前五项为强制属性分配，示例为角色 15
-                    级时的属性值，其余为战斗中的增益或代价。Buff 与具体数值来自 Smithbox 的 SpEffectParam 解包。
-                  </p>
-                  <Table
-                    columns={lipulaColumns}
-                    dataSource={lipulaTradesData}
-                    rowKey="key"
-                    pagination={false}
-                    size="small"
-                    bordered
-                  />
-                  <div className={styles.lipulaNotes}>
-                    <div className={styles.lipulaNotesTitle}>补充说明</div>
-                    {lipulaNotes.map((note) => (
-                      <div className={styles.lipulaNoteItem} key={note.title}>
-                        <strong>{note.title}</strong>：{note.desc}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ),
+              label: '⚖️ 利普拉的交易',
+              children: <LipulaTrades />,
             },
             {
               key: 'special-events',
@@ -1147,7 +1142,9 @@ const BossDataView: React.FC<BossDataViewProps> = ({ activeSubTab, scope }) => {
               label: '🎯 弱点累积值',
               children: <WeaknessSection />,
             },
-          ].filter((item) => TAB_SCOPE[String(item.key)] === activeScope)}
+          ]
+            .filter((item) => TAB_SCOPE[String(item.key)] === activeScope)
+            .sort((a, b) => tabOrderIndex(a.key) - tabOrderIndex(b.key))}
         />
       </Card>
     </div>

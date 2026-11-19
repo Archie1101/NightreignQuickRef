@@ -7,7 +7,8 @@ import scalingJson from '../data/zh-CN/weapon_scaling_data.json';
 import uniqueWeaponArts from '../data/zh-CN/unique_weapon_arts.json';
 import weaponArtCategoryHints from '../data/zh-CN/weapon_art_category_hints.json';
 import teardropJson from '../data/zh-CN/teardrop_conversion.json';
-import type { TeardropAffix, TeardropConversionData } from '../types';
+import lipulaStatsJson from '../data/zh-CN/lipula_trade_stats.json';
+import type { TeardropAffix, TeardropConversionData, TeardropLipulaOption } from '../types';
 import { getCurrentTheme } from '../utils/themeUtils';
 import type { WeaponScalingData, WeaponScalingRow } from '../types';
 import styles from '../styles/weaponScalingView.module.css';
@@ -119,6 +120,7 @@ const CHARACTERS: CharacterRow[] = Object.entries(CHARACTER_MODULES)
   });
 
 const TEARDROP_DATA = teardropJson as unknown as TeardropConversionData;
+const LIPULA_OPTIONS = lipulaStatsJson.options as unknown as TeardropLipulaOption[];
 const TEARDROP_BY_NAME = new Map(TEARDROP_DATA.characters.map((character) => [character.name, character]));
 const AFFIX_STAT_KEYS = ['力气', '灵巧', '智力', '信仰', '感应'] as const;
 
@@ -468,7 +470,7 @@ const WeaponScalingView: React.FC = () => {
         if (!conversion) return character;
         const teardrop = TEARDROP_BY_NAME.get(character.name);
         if (conversion.lipula) {
-          const option = TEARDROP_DATA.lipula.options.find((item) => item.key === conversion.lipula);
+          const option = LIPULA_OPTIONS.find((item) => item.key === conversion.lipula);
           if (option) {
             return {
               ...character,
@@ -628,7 +630,7 @@ const WeaponScalingView: React.FC = () => {
             allowClear
             value={conversion.lipula}
             placeholder="不交易"
-            options={TEARDROP_DATA.lipula.options.map((item) => ({
+            options={LIPULA_OPTIONS.map((item) => ({
               value: item.key,
               label: item.name,
             }))}

@@ -98,8 +98,16 @@ export const locationColorMap: Record<string, string> = {
   复仇者家人: 'cyan',
 };
 
+export interface LipulaScenario {
+  key: string;
+  label: string;
+  summary: string;
+  tradeKeys: string[];
+}
+
 export const lipulaTradesData = lipulaTradesJson.trades as LipulaTrade[];
 export const lipulaNotes = lipulaTradesJson.notes;
+export const lipulaScenarios = lipulaTradesJson.scenarios as LipulaScenario[];
 
 // 位置 → Tag 颜色
 export const getLocationColor = (location: string | null | undefined): string => {

@@ -6,11 +6,13 @@ import styles from '../../styles/characterDataView.module.css';
 import DataSourceTooltip from '../../components/DataSourceTooltip';
 import CharacterName from './CharacterName';
 import teardropJson from '../../data/zh-CN/teardrop_conversion.json';
-import type { TeardropAffix, TeardropConversionData } from '../../types';
+import lipulaStatsJson from '../../data/zh-CN/lipula_trade_stats.json';
+import type { TeardropAffix, TeardropConversionData, TeardropLipulaOption } from '../../types';
 
 const { Title, Text } = Typography;
 
 const TEARDROP_DATA = teardropJson as unknown as TeardropConversionData;
+const LIPULA_OPTIONS = lipulaStatsJson.options as unknown as TeardropLipulaOption[];
 
 const POSITIVE_COLOR = '#52c41a';
 const NEGATIVE_COLOR = '#ff4d4f';
@@ -74,7 +76,7 @@ const TeardropConversion: React.FC = () => {
   const [lipulaKey, setLipulaKey] = useState<string | undefined>(undefined);
 
   const character = data.characters.find((item) => item.name === charName) ?? data.characters[0];
-  const lipula = lipulaKey ? data.lipula.options.find((item) => item.key === lipulaKey) : undefined;
+  const lipula = lipulaKey ? LIPULA_OPTIONS.find((item) => item.key === lipulaKey) : undefined;
 
   const result = useMemo(() => {
     if (lipula) return { ...lipula.stats };
@@ -319,7 +321,7 @@ const TeardropConversion: React.FC = () => {
               allowClear
               placeholder="不启用"
               style={{ width: 320, maxWidth: '100%' }}
-              options={data.lipula.options.map((option) => ({
+              options={LIPULA_OPTIONS.map((option) => ({
                 value: option.key,
                 label: `${option.name}（${option.desire}）`,
               }))}

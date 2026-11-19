@@ -283,10 +283,6 @@ export interface TeardropConversionData {
     sourceNote: string;
   };
   characters: TeardropCharacter[];
-  lipula: {
-    name: string;
-    options: TeardropLipulaOption[];
-  };
 }
 
 // ===== 掉落池（src/data/zh-CN/drop_pools.json） =====
@@ -384,7 +380,6 @@ export interface LipulaSkill {
   title: string;
   desc: string;
   values?: string[];
-  link?: string;
 }
 
 export interface LipulaSkillNote {
