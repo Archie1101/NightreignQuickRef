@@ -46,4 +46,8 @@ export const ROADMAP_TODO: RoadmapTodoGroup[] = [
     page: '渡夜者能力/技艺/绝招效果',
     items: ['需要用 smithbox 验证数据'],
   },
+  {
+    page: '永夜利普拉技能',
+    items: ['待验证'],
+  },
 ];
