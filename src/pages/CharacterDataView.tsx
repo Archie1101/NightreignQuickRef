@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Typography, Table, Alert, Tabs, Divider, Switch, Tooltip } from 'antd';
+import { Typography, Table, Tabs, Divider } from 'antd';
 import type { ColumnsType, TableProps } from 'antd/es/table';
-import { Radar, Column } from '@ant-design/plots';
-import { QuestionCircleOutlined, LeftOutlined, RightOutlined, TeamOutlined } from '@ant-design/icons';
+import { Radar } from '@ant-design/plots';
+import { LeftOutlined, RightOutlined, TeamOutlined } from '@ant-design/icons';
 import { throttle } from 'lodash';
 import { getCurrentTheme } from '../utils/themeUtils';
 import styles from '../styles/characterDataView.module.css';
 import DataManager from '../utils/dataManager';
 import DataSourceTooltip from '../components/DataSourceTooltip';
+import DodgeFramesComparison from './characterDataView/DodgeFramesComparison';
 import TeardropConversion from './characterDataView/TeardropConversion';
 import CharacterName from './characterDataView/CharacterName';
 import RoundtableCharacters from './characterDataView/RoundtableCharacters';
@@ -56,16 +57,10 @@ interface CharacterLevelData {
   [key: string]: string | number;
 }
 
-// 「强化闪避」加成（60fps）：默认 +6 帧，女爵·闪身 +2 帧
-const ENHANCED_DODGE_BONUS = 6;
-const ENHANCED_DODGE_BONUS_OVERRIDES: { [name: string]: number } = {
-  '女爵（闪身）': 2,
-};
-
 /**
  * 图表只在分栏可见时挂载，且延后一帧再挂：
  * 分栏隐藏时容器宽度为 0，@ant-design/plots 会按 0 宽度重排；切回来的那一帧如果直接复用/新建图表，
- * 会先画出「柱子挤在左半边」的窄图。等一帧让面板完成布局后再挂载，图表一次就按正确宽度绘制。
+ * 会先以错误的宽度渲染。等一帧让面板完成布局后再挂载，图表一次就按正确宽度绘制。
  */
 const useChartMountWhenVisible = (active: boolean) => {
   const [mounted, setMounted] = useState(active);
@@ -78,320 +73,6 @@ const useChartMountWhenVisible = (active: boolean) => {
     return () => cancelAnimationFrame(raf);
   }, [active]);
   return mounted;
-};
-
-// 闪避无敌帧对比组件
-const DodgeFramesComparison = ({ active = true }: { active?: boolean }) => {
-  const chartMounted = useChartMountWhenVisible(active);
-  const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>(getCurrentTheme());
-  const [chartKey, setChartKey] = useState(0);
-  const [frameData, setFrameData] = useState<Array<{ name: string; type: string; value: number }>>([]);
-  // 是否叠加「强化闪避」：无敌帧 +6（女爵·闪身 +2），动作总帧长不变
-  const [enhancedDodge, setEnhancedDodge] = useState(false);
-
-  useEffect(() => {
-    const checkTheme = () => {
-      const newTheme = getCurrentTheme();
-      if (newTheme !== currentTheme) {
-        setCurrentTheme(newTheme);
-        setChartKey((prev) => prev + 1);
-      }
-    };
-
-    // 初始检查
-    checkTheme();
-
-    // 监听 localStorage 变化
-    const handleStorageChange = () => {
-      // 延迟一点时间确保 localStorage 已更新
-      setTimeout(checkTheme, 50);
-    };
-
-    // 监听系统主题变化
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleMediaChange = () => {
-      checkTheme();
-    };
-
-    // 监听自定义主题变化事件
-    const handleThemeChange = () => {
-      setTimeout(checkTheme, 50);
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('themeChange', handleThemeChange);
-    mediaQuery.addEventListener('change', handleMediaChange);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('themeChange', handleThemeChange);
-      mediaQuery.removeEventListener('change', handleMediaChange);
-    };
-  }, [currentTheme]);
-
-  // 处理窗口大小变化和拖拽导致的图表刷新问题
-  useEffect(() => {
-    // 节流后的图表刷新函数
-    const throttledChartRefresh = throttle(() => {
-      // 强制重新渲染图表
-      setChartKey((prev) => prev + 1);
-    }, 300); // 300ms节流延迟
-
-    // 监听窗口大小变化
-    const handleResize = () => {
-      throttledChartRefresh();
-    };
-
-    // 监听拖拽相关事件
-    const handleDragEnd = () => {
-      // 拖拽结束后延迟刷新，确保容器尺寸已稳定
-      setTimeout(throttledChartRefresh, 100);
-    };
-
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('dragend', handleDragEnd);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('dragend', handleDragEnd);
-    };
-  }, []); // 空依赖数组，只在组件挂载时设置监听器
-
-  // 确保组件挂载后图表能正确渲染
-  useEffect(() => {
-    // 强制重新渲染图表
-    const timer = setTimeout(() => {
-      window.dispatchEvent(new Event('resize'));
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // 加载无敌帧数据
-  useEffect(() => {
-    const loadFrameData = async () => {
-      try {
-        const dataManager = DataManager.getInstance();
-        await dataManager.loadGroup('character');
-        setFrameData(dataManager.getInvincibleFrames());
-      } catch (error) {
-        console.error('Failed to load frame data:', error);
-      }
-    };
-
-    void loadFrameData();
-  }, []);
-
-  // 「强化闪避」：把 6 帧非无敌帧转为无敌帧（女爵·闪身只转 2 帧），总帧长不变
-  const displayFrameData = useMemo(() => {
-    if (!enhancedDodge) {
-      return frameData;
-    }
-    return frameData.map((item) => {
-      const bonus = ENHANCED_DODGE_BONUS_OVERRIDES[item.name] ?? ENHANCED_DODGE_BONUS;
-      if (item.type === '无敌帧') {
-        return { ...item, value: item.value + bonus };
-      }
-      if (item.type === '非无敌帧') {
-        return { ...item, value: Math.max(0, item.value - bonus) };
-      }
-      return item;
-    });
-  }, [frameData, enhancedDodge]);
-
-  // 值为 0 的段不参与绘制，避免出现 0 标签
-  const chartFrameData = useMemo(() => displayFrameData.filter((item) => item.value > 0), [displayFrameData]);
-
-  // 计算每个角色的总帧数用于顶部注释
-  const totalFrames: { [key: string]: number } = {};
-  displayFrameData.forEach((item: { name: string; type: string; value: number }) => {
-    if (!totalFrames[item.name]) {
-      totalFrames[item.name] = 0;
-    }
-    totalFrames[item.name] += item.value;
-  });
-
-  // 创建注释数组
-  const annotations = Object.entries(totalFrames).map(([name, total]) => ({
-    type: 'text',
-    data: [name, total],
-    style: {
-      text: `${total}`,
-      textBaseline: 'bottom',
-      position: 'top',
-      textAlign: 'center',
-      fontSize: 14,
-      fill: currentTheme === 'dark' ? 'rgba(232, 232, 232, 0.85)' : 'rgb(0, 158, 231)',
-    },
-    tooltip: false,
-  }));
-
-  const config = {
-    data: chartFrameData,
-    xField: 'name',
-    yField: 'value',
-    stack: true,
-    colorField: 'type',
-    theme: currentTheme,
-    height: 400,
-    autoFit: true,
-    label: {
-      text: 'value',
-      textBaseline: 'middle',
-      position: 'inside',
-    },
-    tooltip: false,
-    scale: {
-      y: {
-        domainMax: 60,
-      },
-    },
-    axis: {
-      x: {
-        label: {
-          autoRotate: false,
-          autoHide: false,
-          autoEllipsis: false,
-          style: {
-            fill: currentTheme === 'dark' ? '#ffffff' : '#000000',
-            fontSize: 12,
-          },
-        },
-        line: {
-          style: {
-            stroke: currentTheme === 'dark' ? '#ffffff' : '#000000',
-            lineWidth: 1,
-          },
-        },
-        tickLine: {
-          style: {
-            stroke: currentTheme === 'dark' ? '#ffffff' : '#000000',
-            lineWidth: 1,
-          },
-        },
-        labelFormatter: (value: string) => {
-          // 将括号内容换行显示
-          return value.replace(/（([^）]+)）/g, '\n（$1）');
-        },
-      },
-      y: {
-        label: {
-          style: {
-            fill: currentTheme === 'dark' ? '#ffffff' : '#000000',
-            fontSize: 12,
-          },
-        },
-        line: {
-          style: {
-            stroke: currentTheme === 'dark' ? '#ffffff' : '#000000',
-            lineWidth: 1,
-          },
-        },
-        tickLine: {
-          style: {
-            stroke: currentTheme === 'dark' ? '#ffffff' : '#000000',
-            lineWidth: 1,
-          },
-        },
-        labelFormatter: (value: number) => `${value}帧`,
-      },
-    },
-    style: {
-      radius: 10,
-      fillOpacity: 0.8,
-    },
-    annotations,
-  };
-
-  return (
-    <div className={`content-wrapper ${styles.cardItem}`}>
-      <div
-        className={styles.cardHeader}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '12px',
-          flexWrap: 'wrap',
-        }}
-      >
-        <Title level={5} className="character-card-title" style={{ margin: 0 }}>
-          翻滚/闪避 帧数对比
-        </Title>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Text style={{ fontSize: '13px', color: 'var(--color-text-2)' }}>强化闪避</Text>
-          <Switch
-            size="small"
-            checked={enhancedDodge}
-            onChange={setEnhancedDodge}
-            checkedChildren="开"
-            unCheckedChildren="关"
-          />
-          <Tooltip title="开启后按「强化闪避」加成显示：无敌帧 +6 帧（女爵·闪身 +2 帧），动作总帧长不变。熔炉羽护符、风结晶露滴同理。">
-            <QuestionCircleOutlined style={{ color: 'var(--color-text-3)', cursor: 'help' }} />
-          </Tooltip>
-        </div>
-      </div>
-      <div className={styles.cardBody}>
-        <div style={{ marginBottom: '10px', color: 'var(--theme-text-secondary)', fontSize: '14px' }}>
-          提示：图中为60帧情况下的数据（1帧即1/60秒）
-        </div>
-        {enhancedDodge && (
-          <div style={{ marginBottom: '10px', color: 'var(--color-primary-500)', fontSize: '14px' }}>
-            已开启「强化闪避」：无敌帧 +6（女爵·闪身 +2），非无敌帧相应减少，总帧长不变
-          </div>
-        )}
-        <div
-          className={styles.dodgeFramesChartContainer}
-          style={{
-            height: 400,
-            width: '100%',
-            padding: '20px 0',
-            minHeight: '400px',
-            position: 'relative',
-          }}
-        >
-          {chartMounted && (
-            <Column key={`dodge-frames-${chartKey}-${enhancedDodge ? 'enhanced' : 'base'}`} {...config} />
-          )}
-        </div>
-
-        {/* 提示信息 */}
-        <Alert
-          title="机制说明"
-          description={
-            <div className={styles.dodgeFramesTips}>
-              <div className={styles.tipItem}>
-                1. 黑夜君临中没有负重影响人物翻滚 / 闪避的机制，角色直接决定回避性能，人物体型 / 身高与回避性能无关。
-              </div>
-
-              <div className={styles.tipItem}>
-                2. 蓝色部分表示 "无敌帧"，绿色部分表示非无敌帧。从0帧开始，非无敌帧结束后即可自由移动。（无敌帧 +
-                非无敌帧 = 翻滚/闪避动画总帧长）
-              </div>
-
-              <div className={styles.tipItem}>
-                3.
-                如果角色在动作的无敌帧结束前执行了其他动作（如进行轻攻击），那无敌帧会在执行其他动作的瞬间中断，同时这也会减少整个闪避动作的位移距离。
-              </div>
-
-              <div className={styles.tipItem}>
-                4. 各数值对应的秒数计算：帧数数值× (1/60秒); 举例: 追踪者翻滚总时长为40帧，在60帧情况下，对应的时长为
-                40×(1/60)s = 2/3s ≈ 0.67s
-              </div>
-
-              <div className={styles.tipItem}>
-                5. 熔炉羽护符、风结晶露滴或局内强化闪避额外获得的无敌帧为6帧，女爵（闪身）为2帧
-              </div>
-            </div>
-          }
-          type="info"
-          showIcon={false}
-          style={{ marginTop: '20px' }}
-        />
-      </div>
-    </div>
-  );
 };
 
 // 角色属性接口定义
@@ -1446,7 +1127,7 @@ const CharacterDataView: React.FC<CharacterDataViewProps> = ({ activeSubTab }) =
               label: '⚡ 翻滚/闪避无敌帧',
               children: (
                 <div id="dodge-frames">
-                  <DodgeFramesComparison active={activeCharTab === '无敌帧'} />
+                  <DodgeFramesComparison />
                 </div>
               ),
             },

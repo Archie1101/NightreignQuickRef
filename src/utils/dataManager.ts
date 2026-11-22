@@ -1,6 +1,6 @@
 // 数据管理器 - 按页面分组按需加载 JSON
 import { message } from './feedback';
-import type { EntryData } from '../types';
+import type { DodgeFrameData, EntryData } from '../types';
 
 // 词条数据类型统一由 src/types 定义（此处 re-export，避免两份定义漂移：
 // 曾因这里的副本缺 tags，导致深夜模式词条的「未实装」标签与筛选失效）
@@ -48,12 +48,6 @@ export interface MagicMove {
   [key: string]: string;
 }
 
-export interface InvincibleFrame {
-  name: string;
-  type: string;
-  value: number;
-}
-
 // 道具效果数据接口
 export interface ItemEffect {
   name: string;
@@ -83,7 +77,7 @@ type CacheData =
   | WeaponEffect
   | CharacterData
   | MagicMove[]
-  | InvincibleFrame[]
+  | DodgeFrameData
   | EnhancementCategory[]
   | ItemEffect[]
   | CharacterDetailData
@@ -119,7 +113,7 @@ const GROUP_FILES: Record<DataGroup, GroupFile[]> = {
   // 角色数据页（含 10 个角色等级文件，见 CHARACTER_FILES）
   character: [
     { key: 'characterStates', load: () => import('../data/zh-CN/character_states.json') },
-    { key: 'invincibleFrames', load: () => import('../data/zh-CN/invincible_frames.json') },
+    { key: 'dodgeFrames', load: () => import('../data/zh-CN/invincible_frames.json') },
     { key: 'magicMoveList', load: () => import('../data/zh-CN/magic_move_list.json') },
   ],
   // 传说武器详情页
@@ -252,8 +246,8 @@ class DataManager {
     return (this.dataCache.get('magicMoveList') as MagicMove[]) || [];
   }
 
-  public getInvincibleFrames(): InvincibleFrame[] {
-    return (this.dataCache.get('invincibleFrames') as InvincibleFrame[]) || [];
+  public getDodgeFrames(): DodgeFrameData | undefined {
+    return this.dataCache.get('dodgeFrames') as DodgeFrameData | undefined;
   }
 
   public getEnhancementCategories(): EnhancementCategory[] {

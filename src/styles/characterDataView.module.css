@@ -213,36 +213,6 @@ body[tomato-theme='dark'] .cardItem .cardBody {
   transition: all var(--transition-normal);
 }
 
-/* 闪避无敌帧对比图表过渡动画 */
-.dodgeFramesChartContainer {
-  transition: all var(--transition-normal);
-  opacity: 1;
-  transform: scale(1);
-  filter: brightness(1);
-}
-
-.dodgeFramesChartContainer.themeTransitioning {
-  opacity: 0.6;
-  transform: scale(0.95);
-  filter: brightness(0.7);
-}
-
-.dodgeFramesChartContainer.themeTransitioning canvas {
-  transition: all var(--transition-normal);
-}
-
-/* 闪避无敌帧提示信息样式 */
-.dodgeFramesTips {
-  color: var(--color-text-1);
-}
-
-.dodgeFramesTips .tipItem {
-  /* margin-bottom: 6px; */
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--color-text-2);
-}
-
 /* Alert 组件样式优化 */
 
 .characterDataContainer :global(.ant-alert-message) {

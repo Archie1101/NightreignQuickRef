@@ -1,4 +1,25 @@
 // 定义数据接口
+export interface DodgeAnimation {
+  id: string;
+  name: string;
+  invincibility: [start: number, end: number] | null;
+  enhancedInvincibility: [start: number, end: number] | null;
+  cancelFrames: Partial<Record<number, number>>;
+}
+
+export interface DodgeFlagType {
+  id: number;
+  name: string;
+  meaning: string;
+  cancelLabel?: string;
+}
+
+export interface DodgeFrameData {
+  sourceFrameRate: number;
+  flagTypes: DodgeFlagType[];
+  animations: DodgeAnimation[];
+}
+
 export interface EntryData {
   entry_id: string;
   entry_name: string;
