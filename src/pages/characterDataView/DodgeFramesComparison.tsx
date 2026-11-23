@@ -237,6 +237,17 @@ export default function DodgeFramesComparison() {
       <p className={styles.note}>
         展开动作查看方向、动作 ID 与取消帧。可移动时机以 Flag 11 为准，提前接其他动作可能会中断无敌和位移。
       </p>
+      <p className={styles.source}>
+        数据来源：
+        <a href="https://www.bilibili.com/video/BV1LvuVzuEqo" target="_blank" rel="noreferrer">
+          小辛《全角色回避翻滚动作，无敌帧分析对比》
+        </a>
+        ；并使用 Smithbox 解包 <code>c0000.anibnd.dcx</code>，通过{' '}
+        <a href="https://github.com/Meowmaritus/DSAnimStudio" target="_blank" rel="noreferrer">
+          DSAnimStudio
+        </a>{' '}
+        核对 TAE 动画参数。
+      </p>
 
       <Modal title="FlagType 释义" open={flagsOpen} onCancel={() => setFlagsOpen(false)} footer={null} width={700}>
         <div className={styles.flagTableWrap} role="region" aria-label="FlagType 释义表格" tabIndex={0}>

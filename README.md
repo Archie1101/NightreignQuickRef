@@ -88,6 +88,7 @@
 - [角色升级所需卢恩（game8）](https://game8.co/games/Elden-Ring-Nightreign/archives/522643)
 - [官方 Wiki（Fextralife）](https://eldenringnightreign.wiki.fextralife.com/Elden+Ring+Nightreign+Wiki)
 - [Smithbox 2.2.6（参数解包工具）](https://github.com/vawser/Smithbox/releases#release-2.2.6)
+- [DSAnimStudio（TAE / 动画事件查看工具）](https://github.com/Meowmaritus/DSAnimStudio)
 - [大空洞金武商店对应武器（小黑盒）](https://api.xiaoheihe.cn/v3/bbs/app/api/web/share?h_camp=link&h_session_id=WnAl0U54uSJoMc6y&h_src=YXBwX3NoYXJl&link_id=aa6371e96491&new_post_share_style_v2=0)
 - [简单用训练场MOD选了选山羊的buff](https://api.xiaoheihe.cn/v3/bbs/app/api/web/share?h_camp=link&h_src=YXBwX3NoYXJl&link_id=32ff72786e0c&new_post_share_style_v2=1)
 

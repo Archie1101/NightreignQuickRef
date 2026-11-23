@@ -19,16 +19,13 @@ export const LATEST_UPDATES: string[] = [
   '异常值说明',
   '武器补正适配度',
   '永夜利普拉技能',
+  '翻滚与闪避帧数补充',
 ];
 
 export const ROADMAP_TODO: RoadmapTodoGroup[] = [
   {
     page: '游戏机制',
     items: ['救人值'],
-  },
-  {
-    page: '角色数据',
-    items: ['送葬者开启技艺后无敌帧变化'],
   },
   {
     page: '机制',
