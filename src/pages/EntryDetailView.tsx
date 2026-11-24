@@ -1006,9 +1006,9 @@ const EntryDetailView: React.FC<EntryDetailViewProps> = ({ activeSubTab, scope }
             switch (skillType) {
               case '祷告':
                 return 'cyan';
-              case '战灰':
+              case '战灰&战技':
                 return 'green';
-              case '武器':
+              case '庇佑':
                 return 'red';
               case '魔法':
                 return 'purple';
