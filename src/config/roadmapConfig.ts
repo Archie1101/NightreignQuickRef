@@ -47,4 +47,8 @@ export const ROADMAP_TODO: RoadmapTodoGroup[] = [
     page: '永夜利普拉技能',
     items: ['待验证'],
   },
+  {
+    page: '道具/采集效果',
+    items: ['待补充'],
+  },
 ];
