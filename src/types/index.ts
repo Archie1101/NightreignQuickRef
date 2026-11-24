@@ -452,6 +452,7 @@ export interface WeaponScalingData {
   };
   curves: Record<WeaponScalingCurve, { name: string; stages: number[]; growth: number[] }>;
   weapons: WeaponScalingRow[];
+  startingWeaponNotes: string[];
   affinityNotes: string[];
 }
 
