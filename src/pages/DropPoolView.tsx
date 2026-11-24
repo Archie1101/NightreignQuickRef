@@ -31,6 +31,7 @@ import {
   adjustSegmentPercents,
   calcDiscovery,
   DEFAULT_DISCOVERY_SETUP,
+  normalizeDiscoveryArcane,
   type DiscoverySetup,
 } from '../config/discoveryConfig';
 import { BASE_POOL_KINDS, KIND_CLASS } from './dropPoolView/poolKinds';
@@ -296,7 +297,10 @@ const DropPoolView: React.FC = () => {
   const [discoverySetup, setDiscoverySetup] = useState<DiscoverySetup>(() => {
     try {
       const raw = localStorage.getItem('nightreign-discovery-setup');
-      if (raw) return { ...DEFAULT_DISCOVERY_SETUP, ...(JSON.parse(raw) as Partial<DiscoverySetup>) };
+      if (raw) {
+        const saved = JSON.parse(raw) as Partial<DiscoverySetup> | null;
+        return { ...DEFAULT_DISCOVERY_SETUP, ...saved, arcane: normalizeDiscoveryArcane(saved?.arcane) };
+      }
     } catch {
       // 本地存档损坏时退回默认值
     }

@@ -697,3 +697,66 @@ body[tomato-theme='dark'] .percentDown {
     grid-template-columns: 1fr;
   }
 }
+
+.discArcaneQuick {
+  padding: 10px 0 12px;
+  border-bottom: 1px solid var(--theme-border);
+}
+
+.discArcaneQuickLabel {
+  margin-bottom: 8px;
+  color: var(--color-text-3);
+  font-size: 11px;
+}
+
+.discArcaneAvatars {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.discArcaneAvatar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 7px 4px 6px;
+  border: 1px solid var(--theme-border);
+  border-radius: 8px;
+  background: var(--theme-bg-secondary);
+  color: var(--color-text-2);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.discArcaneAvatar:hover,
+.discArcaneAvatar:focus-visible {
+  border-color: var(--color-primary-500);
+  background: var(--theme-bg-tertiary);
+  outline: none;
+}
+
+.discArcaneAvatarIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+
+.discArcaneAvatarName {
+  overflow: hidden;
+  max-width: 100%;
+  color: var(--color-text-1);
+  font-size: 11px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.discArcaneAvatarValue {
+  color: var(--color-text-3);
+  font-size: 11px;
+  line-height: 1.2;
+}
