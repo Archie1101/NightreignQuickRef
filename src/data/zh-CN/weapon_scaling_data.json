@@ -2,7 +2,7 @@
   "meta": {
     "title": "黑夜君临 所有武器攻击力补正、基础削韧",
     "author": "虚空蛋黄酱",
-    "note": "角色属性取站内 15 级数据；成长曲线、补正分布与公式来自《武器总结》的「武器补正 / 战技适配度 / 成长曲线」sheet。"
+    "note": "角色属性取站内 15 级数据。成长曲线和补正分布参考《武器总结》的「武器补正 / 战技适配度 / 成长曲线」工作表。伤害分项、基础攻击力比例、曲线例外和属性补正范围按 Smithbox 的 Reg 1.03.5 解包校核。"
   },
   "curves": {
     "physical": {
@@ -40,13 +40,29 @@
       "poise": "3",
       "physical": "13/73",
       "elemental": "12/63/26",
-      "status": "12/63/39"
+      "status": "12/63/39",
+      "damageLayouts": {
+        "cold": { "base": { "physical": 1, "magic": 1 }, "curves": { "magic": "physical" } }
+      }
     },
     {
       "name": "特殊：黄铜短刀",
       "poise": "3",
       "elemental": "力敏信 12/63/26",
-      "note": "唯一一把人物属性与武器属性有对应关系的武器；魔力、寒冷质变补正为力敏智信 10/55/26/26，且血、毒质变无感应补正（correctLuck 是 39，原备注内容可能是错的）",
+      "note": "物理吃力敏信，火焰和神圣吃信仰，雷电吃灵巧，魔力吃智力。血、毒质变的物理分项也只启用力敏信。",
+      "damageLayouts": {
+        "none": { "base": { "physical": 75 } },
+        "cold": { "base": { "physical": 30, "magic": 30 }, "curves": { "magic": "physical" } },
+        "blood": { "base": { "physical": 60 } },
+        "poison": { "base": { "physical": 60 } }
+      },
+      "damageStats": {
+        "physical": ["str", "dex", "faith"],
+        "magic": ["int"],
+        "fire": ["faith"],
+        "lightning": ["dex"],
+        "holy": ["faith"]
+      },
       "specialAffinities": {
         "none": [
           12,
@@ -179,6 +195,12 @@
     },
     {
       "name": "特殊：棍棒",
+      "damageLayouts": {
+        "none": { "base": { "physical": 72 } },
+        "cold": { "base": { "physical": 29, "magic": 29 } },
+        "blood": { "base": { "physical": 58 } },
+        "poison": { "base": { "physical": 58 } }
+      },
       "poise": "6",
       "physical": "80/0",
       "elemental": "68/0/24",
@@ -252,6 +274,12 @@
     },
     {
       "name": "特殊：大棍棒",
+      "damageLayouts": {
+        "none": { "base": { "physical": 88 } },
+        "cold": { "base": { "physical": 36, "magic": 36 } },
+        "blood": { "base": { "physical": 71 } },
+        "poison": { "base": { "physical": 71 } }
+      },
       "poise": "6.5",
       "physical": "80/0",
       "elemental": "68/0/24",
@@ -325,6 +353,12 @@
     },
     {
       "name": "特殊：铁块连枷",
+      "damageLayouts": {
+        "none": { "base": { "physical": 86 } },
+        "cold": { "base": { "physical": 35, "magic": 35 } },
+        "blood": { "base": { "physical": 69 } },
+        "poison": { "base": { "physical": 69 } }
+      },
       "poise": "6",
       "physical": "54/44",
       "elemental": "46/38/30",
@@ -429,6 +463,16 @@
       "name": "特殊：泥人鱼叉",
       "poise": "5",
       "elemental": "力敏智 38/46/30",
+      "damageLayouts": {
+        "none": { "base": { "physical": 54, "magic": 36 } },
+        "fire": { "base": { "physical": 31, "magic": 31, "fire": 27 } },
+        "lightning": { "base": { "physical": 31, "magic": 31, "lightning": 27 } },
+        "holy": { "base": { "physical": 31, "magic": 31, "holy": 27 } },
+        "magic": { "base": { "physical": 49, "magic": 40 } },
+        "cold": { "base": { "physical": 39, "magic": 32 } },
+        "poison": { "base": { "physical": 43, "magic": 29 } },
+        "blood": { "base": { "physical": 43, "magic": 29 } }
+      },
       "note": "所有质变均有智力补正；神圣为力敏智信 25/38/29/29，血、毒为力敏智感 25/38/29/44",
       "specialAffinities": {
         "none": [
@@ -501,6 +545,16 @@
       "name": "特殊：大树矛",
       "poise": "5.5",
       "elemental": "力敏信 33/50/29",
+      "damageLayouts": {
+        "none": { "base": { "physical": 71, "holy": 47 } },
+        "fire": { "base": { "physical": 41, "fire": 36, "holy": 41 }, "curves": { "holy": "physical" } },
+        "lightning": { "base": { "physical": 41, "lightning": 36, "holy": 41 }, "curves": { "holy": "physical" } },
+        "holy": { "base": { "physical": 52, "holy": 66 } },
+        "magic": { "base": { "physical": 41, "magic": 36, "holy": 41 }, "curves": { "holy": "physical" } },
+        "cold": { "base": { "physical": 33, "magic": 29, "holy": 33 }, "curves": { "magic": "physical", "holy": "physical" } },
+        "poison": { "base": { "physical": 57, "holy": 38 }, "curves": { "holy": "physical" } },
+        "blood": { "base": { "physical": 57, "holy": 38 }, "curves": { "holy": "physical" } }
+      },
       "note": "所有质变均有信仰补正；魔力、寒冷为力敏智信 25/38/29/29，血、毒为力敏信感 25/38/29/44",
       "specialAffinities": {
         "none": [
@@ -586,6 +640,12 @@
     },
     {
       "name": "特殊：守卫剑枪",
+      "damageLayouts": {
+        "none": { "base": { "physical": 103 } },
+        "cold": { "base": { "physical": 42, "magic": 42 } },
+        "blood": { "base": { "physical": 83 } },
+        "poison": { "base": { "physical": 83 } }
+      },
       "poise": "5",
       "physical": "13/73",
       "elemental": "12/63/26",
@@ -675,6 +735,9 @@
       "name": "特殊：复仇者的咒爪",
       "poise": "5",
       "elemental": "力敏信 13/0/73",
+      "damageLayouts": {
+        "magic": { "base": { "physical": 12, "magic": 54 } }
+      },
       "note": "只有复仇者本人使用咒爪具有特殊的爪击，其他人只有拳套动作且倍率很低",
       "specialAffinities": {
         "magic": [
@@ -709,6 +772,10 @@
     },
     {
       "name": "特殊：蛇弓",
+      "damageLayouts": {
+        "none": { "base": { "physical": 59 } },
+        "poison": { "base": { "physical": 59 } }
+      },
       "poise": "2",
       "status": "7/65/38",
       "note": "自带中毒值补正使用 5 号曲线（数值同 4 号曲线）",
@@ -741,9 +808,9 @@
     }
   ],
   "affinityNotes": [
-    "魔力 / 火焰 / 雷电 / 神圣质变：白武牺牲 18 物理面板，换取 19.2 对应属性面板；紫武牺牲 30 物理面板，换取 33 对应属性面板。",
-    "血 / 毒 / 寒冷质变：牺牲 15% 物理面板，换取 35 / 35 / 25 异常值。",
-    "血 / 毒质变不会改变武器原本的属性。",
-    "寒冷质变在魔力质变的基础上，进一步降低武器的基础面板。"
+    "火焰、雷电、魔力和神圣质变通常把原生纯物理武器的基础攻击力拆成约等份的物理与对应元素。物理分项通常走 0 号曲线，元素分项通常走 4 号曲线。",
+    "血和毒质变通常保留原有伤害类型，并把基础攻击力按 80% 向上取整，同时增加出血或中毒累积量表。",
+    "寒冷质变通常把原生纯物理武器的基础攻击力按 80% ，再拆成一半物理和一半魔力，各自向上取整，并增加冻伤累积量表。寒冷短剑的魔力分项也走 0 号曲线。",
+    "通用 A 类中，这三种质变会按基础攻击力比例折算。武器类别用 80% 估算，具体武器按质变后与无质变的基础攻击力之比计算。原生带元素或异常的武器可能有不同的分配。"
   ]
 }
