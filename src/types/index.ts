@@ -440,6 +440,7 @@ export interface WeaponScalingData {
   curves: Record<'physical' | 'elemental', { name: string; stages: number[]; growth: number[] }>;
   weapons: WeaponScalingRow[];
   affinityNotes: string[];
+  startingWeaponNotes: string[];
 }
 
 // ===== 异常值（src/data/zh-CN/ailment_data.json） =====

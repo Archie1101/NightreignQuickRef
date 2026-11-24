@@ -680,14 +680,22 @@ const WeaponScalingView: React.FC = () => {
       </div>
 
       <div className={styles.affinityBox}>
-        <p className={styles.affinityTitle}>质变面板变化</p>
+        <p className={styles.affinityTitle}>出击携带属性、异常</p>
+        <ul className={styles.affinityList}>
+          {DATA.startingWeaponNotes.map((note) => (
+            <li key={note}>{note}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div className={styles.affinityBox}>
+        <p className={styles.affinityTitle}>质变</p>
         <ul className={styles.affinityList}>
           {DATA.affinityNotes.map((note) => (
             <li key={note}>{note}</li>
           ))}
         </ul>
       </div>
-
       <h4 className={styles.heading}>武器/战技适配度</h4>
       <p className={styles.hint}>
         通用战技：A 类先选武器类型与质变（无质变、火焰、雷电、魔力、寒冷、神圣、血、毒）， 火焰 / 雷电 / 魔力 / 神圣 /
