@@ -3,11 +3,15 @@ import type { DiscoverySetup } from '../../config/discoveryConfig';
 import {
   calcDiscovery,
   DEFAULT_DISCOVERY_SETUP,
+  DISCOVERY_ARCANE_MAX,
   DISCOVERY_BASE,
   FORTRESS_MAX_STACK,
+  NIGHTFARER_ARCANE_PRESETS,
+  normalizeDiscoveryArcane,
   weaponCount,
   WEAPON_SLOT_LIMIT,
 } from '../../config/discoveryConfig';
+import { characterIconOf } from '../characterDataView/characterIcons';
 import styles from '../../styles/dropPoolView.module.css';
 
 interface DiscoveryDrawerProps {
@@ -54,6 +58,52 @@ const DiscoveryDrawer: React.FC<DiscoveryDrawerProps> = ({ open, onClose, setup,
       styles={{ body: { padding: '8px 16px 16px' } }}
     >
       <div className={styles.discList}>
+        <div className={styles.discRow}>
+          <div className={styles.discInfo}>
+            <label className={styles.discLabel} htmlFor="discovery-arcane">
+              感应
+            </label>
+            <span className={styles.discNote} id="discovery-arcane-note">
+              每点 +1 观察力 · 0～{DISCOVERY_ARCANE_MAX}
+            </span>
+          </div>
+          <InputNumber
+            id="discovery-arcane"
+            aria-describedby="discovery-arcane-note"
+            inputMode="numeric"
+            size="small"
+            min={0}
+            max={DISCOVERY_ARCANE_MAX}
+            precision={0}
+            style={{ width: 64 }}
+            value={setup.arcane}
+            onChange={(value) => update({ arcane: normalizeDiscoveryArcane(value ?? 0) })}
+          />
+        </div>
+
+        <div className={styles.discArcaneQuick}>
+          <div className={styles.discArcaneQuickLabel}>快捷选择渡夜者默认感应</div>
+          <div className={styles.discArcaneAvatars}>
+            {NIGHTFARER_ARCANE_PRESETS.map(({ name, arcane }) => {
+              const icon = characterIconOf(name);
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  className={styles.discArcaneAvatar}
+                  title={`${name} · 感应 ${arcane}`}
+                  aria-label={`${name}，感应 ${arcane}`}
+                  onClick={() => update({ arcane })}
+                >
+                  {icon ? <img src={icon} alt="" className={styles.discArcaneAvatarIcon} /> : null}
+                  <span className={styles.discArcaneAvatarName}>{name}</span>
+                  <span className={styles.discArcaneAvatarValue}>{arcane}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className={styles.discRow}>
           <div className={styles.discInfo}>
             <span className={styles.discLabel}>腌制白银鸟爪（遗物共享）</span>

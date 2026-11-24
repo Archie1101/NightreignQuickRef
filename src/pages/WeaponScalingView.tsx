@@ -10,7 +10,7 @@ import teardropJson from '../data/zh-CN/teardrop_conversion.json';
 import lipulaStatsJson from '../data/zh-CN/lipula_trade_stats.json';
 import type { TeardropAffix, TeardropConversionData, TeardropLipulaOption } from '../types';
 import { getCurrentTheme } from '../utils/themeUtils';
-import type { WeaponScalingData, WeaponScalingRow } from '../types';
+import type { WeaponScalingCurve, WeaponScalingDamageType, WeaponScalingData, WeaponScalingRow } from '../types';
 import styles from '../styles/weaponScalingView.module.css';
 
 import trackerIcon from '../assets/icons/char/Wylder.svg';
@@ -41,9 +41,27 @@ const CHARACTER_ICONS: Record<string, string> = {
 
 const STAT_KEYS = ['力气', '敏捷', '智力', '信仰', '感应'] as const;
 const STAT_LABELS = ['力量', '灵巧', '智力', '信仰', '感应'] as const;
+const SCALING_STATS = ['str', 'dex', 'int', 'faith', 'arc'] as const;
+const CURVE_LABELS: Record<WeaponScalingCurve, string> = { physical: '0 号曲线', elemental: '4 号曲线' };
+const STATUS_AFFINITY_BASE_SCALE = 0.8;
+const DAMAGE_LABELS: Record<WeaponScalingDamageType, string> = {
+  physical: '物理',
+  magic: '魔力',
+  fire: '火焰',
+  lightning: '雷电',
+  holy: '神圣',
+};
+
+interface ScalingPart {
+  damage?: WeaponScalingDamageType;
+  share: number;
+  curve: WeaponScalingCurve;
+  weights: number[];
+}
 
 interface CalcRow {
   key: string;
+  damage?: WeaponScalingDamageType;
   attr: string;
   stat: number;
   weight: number;
@@ -88,6 +106,13 @@ const calcColumns: TableColumnsType<CalcRow> = [
     render: (value: number) => value.toFixed(4),
   },
 ];
+
+const damageColumn = {
+  title: '伤害分项',
+  key: 'damage',
+  width: 90,
+  render: (_: unknown, row: CalcRow) => (row.damage ? DAMAGE_LABELS[row.damage] : null),
+};
 
 const CHARACTER_MODULES = import.meta.glob('../data/character-info/*.json', {
   eager: true,
@@ -142,7 +167,7 @@ const applyAffixes = (base: number[], affixes: TeardropAffix[]): number[] => {
 };
 
 /** 成长曲线：分段线性插值，结果按百分比处理 */
-const curveValue = (curveKey: 'physical' | 'elemental', stat: number) => {
+const curveValue = (curveKey: WeaponScalingCurve, stat: number) => {
   const curve = DATA.curves[curveKey];
   const { stages, growth } = curve;
   if (stat <= stages[0]) return growth[0];
@@ -155,12 +180,26 @@ const curveValue = (curveKey: 'physical' | 'elemental', stat: number) => {
   return growth[growth.length - 1];
 };
 
-const adaptation = (weights: number[], curveKey: 'physical' | 'elemental', stats: number[]) =>
-  1 +
-  weights.reduce((sum, weight, index) => {
-    const coefficient = curveValue(curveKey, stats[index]) / 100;
-    return sum + (weight / 100) * coefficient;
-  }, 0);
+const calculatePart = (part: ScalingPart, stats: number[]) => {
+  const rows: CalcRow[] = STAT_LABELS.map((attr, index) => {
+    const growth = curveValue(part.curve, stats[index]);
+    const coefficient = growth / 100;
+    const weight = part.weights[index] ?? 0;
+    return {
+      key: `${part.damage ?? part.curve}-${attr}`,
+      damage: part.damage,
+      attr,
+      stat: stats[index],
+      weight,
+      growth,
+      coefficient,
+      contribution: (weight / 100) * coefficient,
+    };
+  });
+  return { ...part, rows, value: 1 + rows.reduce((sum, row) => sum + row.contribution, 0) };
+};
+
+const formatShare = (share: number) => `${Number((share * 100).toFixed(2))}%`;
 
 /** 把「力敏智12/63/26」「B类补正：力25」「信80」解析成 5 维补正占比 */
 const parseScaling = (text: string): number[] => {
@@ -178,14 +217,21 @@ const parseScaling = (text: string): number[] => {
 };
 
 const AFFINITIES = [
-  { key: 'none', label: '无质变', field: 'physical', curve: 'physical' },
-  { key: 'fire', label: '火焰质变', field: 'physical', curve: 'elemental' },
-  { key: 'lightning', label: '雷电质变', field: 'physical', curve: 'elemental' },
-  { key: 'magic', label: '魔力质变', field: 'elemental', curve: 'elemental', third: 'int' },
-  { key: 'cold', label: '寒冷质变', field: 'elemental', curve: 'elemental', third: 'int' },
-  { key: 'holy', label: '神圣质变', field: 'elemental', curve: 'elemental', third: 'faith' },
-  { key: 'blood', label: '血质变', field: 'status', curve: 'physical' },
-  { key: 'poison', label: '毒质变', field: 'status', curve: 'physical' },
+  { key: 'none', label: '无质变', field: 'physical', damage: 'physical' },
+  { key: 'fire', label: '火焰质变', field: 'physical', damage: 'fire' },
+  { key: 'lightning', label: '雷电质变', field: 'physical', damage: 'lightning' },
+  { key: 'magic', label: '魔力质变', field: 'elemental', damage: 'magic', third: 'int' },
+  {
+    key: 'cold',
+    label: '寒冷质变',
+    field: 'elemental',
+    damage: 'magic',
+    third: 'int',
+    baseScale: STATUS_AFFINITY_BASE_SCALE,
+  },
+  { key: 'holy', label: '神圣质变', field: 'elemental', damage: 'holy', third: 'faith' },
+  { key: 'blood', label: '血质变', field: 'status', damage: 'physical', baseScale: STATUS_AFFINITY_BASE_SCALE },
+  { key: 'poison', label: '毒质变', field: 'status', damage: 'physical', baseScale: STATUS_AFFINITY_BASE_SCALE },
 ] as const;
 
 type Affinity = (typeof AFFINITIES)[number];
@@ -226,6 +272,33 @@ const weaponWeights = (weapon: WeaponScalingRow | undefined, affinity: Affinity)
     weights[4] = values[2] ?? 0;
   }
   return weights;
+};
+
+const weaponScaling = (weapon: WeaponScalingRow | undefined, affinity: Affinity) => {
+  const weights = weaponWeights(weapon, affinity);
+  const layout = weapon?.damageLayouts?.[affinity.key];
+  const base =
+    layout?.base ?? (affinity.damage === 'physical' ? { physical: 1 } : { physical: 1, [affinity.damage]: 1 });
+  const entries = Object.entries(base) as [WeaponScalingDamageType, number][];
+  const total = entries.reduce((sum, [, value]) => sum + value, 0);
+  const originalBase = weapon?.damageLayouts?.none?.base;
+  const baseScale = 'baseScale' in affinity ? affinity.baseScale : 1;
+  const parts: ScalingPart[] = entries.map(([damage, value]) => {
+    const stats = weapon?.damageStats?.[damage];
+    return {
+      damage,
+      share: value / total,
+      curve: layout?.curves?.[damage] ?? (damage === 'physical' ? 'physical' : 'elemental'),
+      weights: stats ? weights.map((weight, index) => (stats.includes(SCALING_STATS[index]) ? weight : 0)) : weights,
+    };
+  });
+  return {
+    parts,
+    baseScale:
+      baseScale < 1 && layout && originalBase
+        ? total / Object.values(originalBase).reduce((sum, value) => sum + value, 0)
+        : baseScale,
+  };
 };
 
 interface ArtOption {
@@ -384,14 +457,14 @@ const weaponColumns: TableColumnsType<WeaponScalingRow> = [
 ];
 
 const WeaponScalingView: React.FC = () => {
-  const [curveKey, setCurveKey] = useState<'physical' | 'elemental'>('physical');
+  const [curveKey, setCurveKey] = useState<WeaponScalingCurve>('physical');
   const [mode, setMode] = useState<'universal' | 'unique'>('universal');
   const [selectedKey, setSelectedKey] = useState('');
   const [weaponName, setWeaponName] = useState('短剑');
   const [affinityKey, setAffinityKey] = useState('none');
   const [skillClass, setSkillClass] = useState<'A' | 'B'>('A');
   const [bHintKey, setBHintKey] = useState('厚重');
-  const [bCurveKey, setBCurveKey] = useState<'physical' | 'elemental'>('physical');
+  const [bCurveKey, setBCurveKey] = useState<WeaponScalingCurve>('physical');
   const [showUnreleased, setShowUnreleased] = useState(false);
   const [conversionOpen, setConversionOpen] = useState(false);
   const [conversions, setConversions] = useState<Record<string, ConversionState>>({});
@@ -420,9 +493,26 @@ const WeaponScalingView: React.FC = () => {
   const allowedAffinities = affinitiesForWeapon(weapon);
   const affinity = allowedAffinities.find((item) => item.key === affinityKey) ?? allowedAffinities[0] ?? AFFINITIES[0];
   const bHint = B_HINT_OPTIONS.find((item) => item.value === bHintKey) ?? B_HINT_OPTIONS[0];
-  const universalWeights = skillClass === 'A' ? weaponWeights(weapon, affinity) : bHint.weights;
-  const activeWeights = mode === 'universal' ? universalWeights : selected.weights;
-  const activeCurve = mode === 'universal' ? (skillClass === 'A' ? affinity.curve : bCurveKey) : curveKey;
+  const isUniversalA = mode === 'universal' && skillClass === 'A';
+  const { parts: activeParts, baseScale }: ReturnType<typeof weaponScaling> = isUniversalA
+    ? weaponScaling(weapon, affinity)
+    : {
+        baseScale: 1,
+        parts: [
+          {
+            share: 1,
+            curve: mode === 'universal' ? bCurveKey : curveKey,
+            weights: mode === 'universal' ? bHint.weights : selected.weights,
+          },
+        ],
+      };
+  const curveDescription = activeParts
+    .map(({ damage, share, curve }) =>
+      damage ? `${DAMAGE_LABELS[damage]} ${formatShare(share)} · ${CURVE_LABELS[curve]}` : DATA.curves[curve].name,
+    )
+    .join(' / ');
+  const scalingDescription =
+    baseScale === 1 ? curveDescription : `${curveDescription} · 基础攻击力 ${formatShare(baseScale)}`;
   const activeLabel =
     mode === 'universal'
       ? skillClass === 'A'
@@ -431,8 +521,8 @@ const WeaponScalingView: React.FC = () => {
       : selected.label;
   const activeDesc =
     mode === 'universal'
-      ? skillClass === 'A'
-        ? `${DATA.curves[affinity.curve].name} · 武器面板补正`
+      ? isUniversalA
+        ? scalingDescription
         : `${DATA.curves[bCurveKey].name} · B类特殊补正`
       : selected.desc;
 
@@ -489,36 +579,26 @@ const WeaponScalingView: React.FC = () => {
   const conversionCount = Object.values(conversions).filter((item) => item.affixA || item.affixB || item.lipula).length;
 
   const rankings = convertedCharacters
-    .map((character) => ({
-      ...character,
-      value: adaptation(activeWeights, activeCurve, character.stats),
-    }))
+    .map((character) => {
+      const parts = activeParts.map((part) => calculatePart(part, character.stats));
+      return { ...character, parts, value: baseScale * parts.reduce((sum, part) => sum + part.share * part.value, 0) };
+    })
     .sort((a, b) => b.value - a.value);
 
   const best = rankings[0];
 
   const calcRecord = rankings.find((character) => character.name === calcName);
-  const calcRows: CalcRow[] = calcRecord
-    ? STAT_LABELS.map((label, index) => {
-        const growth = curveValue(activeCurve, calcRecord.stats[index]);
-        const coefficient = growth / 100;
-        const weight = activeWeights[index] ?? 0;
-        return {
-          key: label,
-          attr: label,
-          stat: calcRecord.stats[index],
-          weight,
-          growth,
-          coefficient,
-          contribution: (weight / 100) * coefficient,
-        };
-      })
-    : [];
-  const calcTotal = 1 + calcRows.reduce((sum, row) => sum + row.contribution, 0);
-  const calcTerms = calcRows
-    .filter((row) => row.weight > 0)
-    .map((row) => `${(row.weight / 100).toFixed(2)} × ${row.coefficient.toFixed(4)}`);
-  const calcFormula = calcTerms.length > 0 ? `1 + ${calcTerms.join(' + ')} = ${calcTotal.toFixed(4)}` : '1.0000';
+  const calcParts = calcRecord?.parts ?? [];
+  const splitDamage = calcParts.length > 1;
+  const calcRows = calcParts.flatMap((part) => part.rows);
+  const calcTerms = splitDamage
+    ? calcParts.map(({ share, value }) => `${formatShare(share)} × ${value.toFixed(4)}`)
+    : [
+        '1',
+        ...calcRows.filter((row) => row.weight > 0).map((row) => `${row.weight / 100} × ${row.coefficient.toFixed(4)}`),
+      ];
+  const calcSubtotal = calcTerms.join(' + ');
+  const calcFormula = baseScale === 1 ? calcSubtotal : `${formatShare(baseScale)} × (${calcSubtotal})`;
 
   const rankingColumns: TableColumnsType<(typeof rankings)[number]> = [
     {
@@ -668,14 +748,12 @@ const WeaponScalingView: React.FC = () => {
         >
           补正曲线
         </Button>
-        <p className={styles.formulaTitle}>适配度 = 1 + Σ（该属性补正占比 × 成长曲线系数）</p>
+        <p className={styles.formulaTitle}>分项适配度 = 1 + Σ（属性补正权重 × 成长曲线系数）</p>
         <p className={styles.formulaText}>
-          成长曲线系数 = 角色属性在成长曲线上的取值 ÷ 100；角色属性取站内 15 级数据，因此无需写死旧表数值。 1.00
-          为基准，越高表示该角色越吃这把武器的补正。
+          成长曲线系数是 15 级角色属性在对应曲线上的取值除以 100。分项适配度以 1.00 为基准。
         </p>
         <p className={styles.formulaText}>
-          通用战技：A 类按「武器类型 + 质变」自动选曲线（火焰 / 雷电 / 魔力 / 寒冷 / 神圣 → 4 号，其他 → 0 号）；B
-          类武器类型与质变不参与计算，可自由选择 0 / 4 号曲线。专属战技可手动切换曲线。
+          总适配度 = 质变基础倍率 × Σ（各分项基础攻击力占比 × 分项适配度）。强化系数和战技动作倍率另算。
         </p>
       </div>
 
@@ -698,10 +776,9 @@ const WeaponScalingView: React.FC = () => {
       </div>
       <h4 className={styles.heading}>武器/战技适配度</h4>
       <p className={styles.hint}>
-        通用战技：A 类先选武器类型与质变（无质变、火焰、雷电、魔力、寒冷、神圣、血、毒）， 火焰 / 雷电 / 魔力 / 神圣 /
-        寒冷自动使用 4 号曲线，其他质变与无质变使用 0 号曲线；B 类武器类型与质变均置灰， 改选 B 类补正类别，并可自由选择
-        0 / 4 号曲线。专属战技按武器分类分组（已实装 {UNIQUE_OPTIONS.filter((option) => option.installed).length} / 全部{' '}
-        {UNIQUE_OPTIONS.length}）， 支持搜索；专属战技的 A / B 类均使用同一补正系数，不再区分。
+        通用 A 类按武器类型和质变计算。纯物理用 0 号曲线，火焰、雷电、魔力、神圣和寒冷质变通常按物理 0 号与元素 4
+        号各占一半加权。寒冷、血和毒另计基础攻击力折减，武器类别按 80% 估算，已有具体数据的武器按实际比例计算。 通用 B
+        类使用所选补正类别和 0 / 4 号曲线。 专属战技按武器类别分组，支持搜索和手动切换补正曲线。
       </p>
       <div className={styles.toolbar}>
         <Segmented
@@ -750,10 +827,10 @@ const WeaponScalingView: React.FC = () => {
               <>
                 <Segmented
                   value={bCurveKey}
-                  onChange={(value) => setBCurveKey(value as 'physical' | 'elemental')}
+                  onChange={(value) => setBCurveKey(value as WeaponScalingCurve)}
                   options={[
-                    { label: '0 号曲线', value: 'physical' },
-                    { label: '4 号曲线', value: 'elemental' },
+                    { label: CURVE_LABELS.physical, value: 'physical' },
+                    { label: CURVE_LABELS.elemental, value: 'elemental' },
                   ]}
                 />
                 <Select value={bHintKey} onChange={setBHintKey} options={B_HINT_OPTIONS} style={{ minWidth: 190 }} />
@@ -764,7 +841,7 @@ const WeaponScalingView: React.FC = () => {
           <>
             <Segmented
               value={curveKey}
-              onChange={(value) => setCurveKey(value as 'physical' | 'elemental')}
+              onChange={(value) => setCurveKey(value as WeaponScalingCurve)}
               options={[
                 { label: '0 号曲线 · 物理', value: 'physical' },
                 { label: '4 号曲线 · 元素', value: 'elemental' },
@@ -798,7 +875,7 @@ const WeaponScalingView: React.FC = () => {
       </div>
 
       <div className={styles.summary}>
-        <Statistic title={activeLabel} value={best.value} precision={3} prefix="×" />
+        <Statistic title={activeLabel} value={best.value.toFixed(3)} precision={3} prefix="×" />
         <span className={styles.summaryText}>
           最适配：{best.name}（{STAT_LABELS.map((label, i) => `${label}${best.stats[i]}`).join(' / ')}）
         </span>
@@ -849,23 +926,23 @@ const WeaponScalingView: React.FC = () => {
       >
         {calcRecord ? (
           <>
-            <p className={styles.hint}>
-              当前选择：{activeLabel}；曲线：{DATA.curves[activeCurve].name}
-            </p>
-            <p className={styles.hint}>
-              补正权重：
-              {calcRows
-                .filter((row) => row.weight > 0)
-                .map((row) => `${row.attr} ${row.weight}%`)
-                .join(' / ') || '无'}
-            </p>
-            <Table columns={calcColumns} dataSource={calcRows} rowKey="key" size="small" bordered pagination={false} />
+            <p className={styles.hint}>{activeLabel}</p>
+            <p className={styles.hint}>{scalingDescription}</p>
+            <Table
+              className={styles.calcTable}
+              columns={splitDamage ? [damageColumn, ...calcColumns] : calcColumns}
+              dataSource={calcRows}
+              rowKey="key"
+              size="small"
+              bordered
+              pagination={false}
+              scroll={{ x: splitDamage ? 640 : 550 }}
+            />
             <p className={styles.calcFormula}>
               适配度 = {calcFormula} ≈ ×{calcRecord.value.toFixed(3)}
             </p>
             <p className={styles.note}>
-              曲线值 = 角色属性在成长曲线上的取值；系数 = 曲线值 ÷ 100；贡献 = 补正权重 ÷ 100 × 系数。适配度 = 1 +
-              各属性贡献之和。
+              每个分项从 1.00 起算，加上各属性的贡献（补正权重 × 曲线系数）。按基础攻击力占比合计后乘质变基础倍率。
             </p>
           </>
         ) : null}

@@ -416,6 +416,15 @@ export interface LipulaSkillsData {
 
 // ===== 武器补正适配度（src/data/zh-CN/weapon_scaling_data.json） =====
 
+export type WeaponScalingCurve = 'physical' | 'elemental';
+export type WeaponScalingDamageType = 'physical' | 'magic' | 'fire' | 'lightning' | 'holy';
+export type WeaponScalingStat = 'str' | 'dex' | 'int' | 'faith' | 'arc';
+
+interface WeaponScalingDamageLayout {
+  base: Partial<Record<WeaponScalingDamageType, number>>;
+  curves?: Partial<Record<WeaponScalingDamageType, WeaponScalingCurve>>;
+}
+
 export interface WeaponScalingRow {
   name: string;
   poise: string;
@@ -427,6 +436,10 @@ export interface WeaponScalingRow {
   category?: string;
   /** 特殊武器按质变 key 直接给出的五维补正（力/敏/智/信/感） */
   specialAffinities?: Record<string, number[]>;
+  /** 按质变 key 记录基础攻击力分项和有别于默认规则的曲线 */
+  damageLayouts?: Record<string, WeaponScalingDamageLayout>;
+  /** 各伤害分项参与补正的属性，省略时使用全部武器补正 */
+  damageStats?: Partial<Record<WeaponScalingDamageType, WeaponScalingStat[]>>;
   /** 数据尚待确认的特殊武器 */
   pending?: boolean;
 }
@@ -437,8 +450,9 @@ export interface WeaponScalingData {
     author: string;
     note: string;
   };
-  curves: Record<'physical' | 'elemental', { name: string; stages: number[]; growth: number[] }>;
+  curves: Record<WeaponScalingCurve, { name: string; stages: number[]; growth: number[] }>;
   weapons: WeaponScalingRow[];
+  startingWeaponNotes: string[];
   affinityNotes: string[];
   startingWeaponNotes: string[];
 }

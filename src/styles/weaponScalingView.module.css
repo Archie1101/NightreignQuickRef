@@ -183,6 +183,10 @@
   font-weight: 600;
 }
 
+.calcTable :global(.ant-table) {
+  min-width: 0;
+}
+
 .calcFormula {
   margin: 14px 0 0;
   padding: 10px 12px;

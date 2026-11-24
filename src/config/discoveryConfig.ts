@@ -1,7 +1,8 @@
 import type { DropSegment } from '../types';
 
-/** 观察力基础值：所有渡夜者默认 100 */
+/** 感应为 0 时的观察力，也是原始权重对应的基准值 */
 export const DISCOVERY_BASE = 100;
+export const DISCOVERY_ARCANE_MAX = 99;
 
 /** 武器固有「提升观察力」最多 6 把 */
 export const WEAPON_SLOT_LIMIT = 6;
@@ -9,7 +10,7 @@ export const WEAPON_SLOT_LIMIT = 6;
 export const FORTRESS_MAX_STACK = 10;
 
 /**
- * 观察力模拟的可选来源（数值 = 解包 SpEffectParam.itemDropRate × 100）。
+ * 感应按 CalcCorrectGraph 140 每点加 1，其余加成取 SpEffectParam.itemDropRate × 100。
  * - 7050303 遗物「白银鸟爪效果共享给附近队友」+20，最多 2 层
  * - 8510000/1/2 武器固有「提升观察力」+20/+30/+40，最多 6 把
  * - 311000 护符 银色粪金龟 +40（与贪欲者的烙印按相加处理）
@@ -18,6 +19,7 @@ export const FORTRESS_MAX_STACK = 10;
  * - 6060400 遗物「每次打倒小型要塞的强敌」+16/层
  */
 export interface DiscoverySetup {
+  arcane: number;
   fowlShare: number;
   /** 腌制白银鸟爪（自己使用）+30 */
   fowlItem: boolean;
@@ -31,6 +33,7 @@ export interface DiscoverySetup {
 }
 
 export const DEFAULT_DISCOVERY_SETUP: DiscoverySetup = {
+  arcane: 10,
   fowlShare: 0,
   fowlItem: false,
   weapon20: 0,
@@ -42,10 +45,16 @@ export const DEFAULT_DISCOVERY_SETUP: DiscoverySetup = {
   fortress: 0,
 };
 
+export const normalizeDiscoveryArcane = (value: unknown): number =>
+  typeof value === 'number' && Number.isFinite(value)
+    ? Math.max(0, Math.min(DISCOVERY_ARCANE_MAX, Math.round(value)))
+    : DEFAULT_DISCOVERY_SETUP.arcane;
+
 export const weaponCount = (setup: DiscoverySetup) => setup.weapon20 + setup.weapon30 + setup.weapon40;
 
 export const calcDiscovery = (setup: DiscoverySetup): number =>
   DISCOVERY_BASE +
+  setup.arcane +
   setup.fowlShare * 20 +
   (setup.fowlItem ? 30 : 0) +
   setup.weapon20 * 20 +
@@ -75,3 +84,17 @@ export const adjustSegmentPercents = (segments: DropSegment[], discovery: number
   for (let i = 0; i < order.length && rest > 0; i += 1, rest -= 1) floors[order[i].index] += 1;
   return floors;
 };
+
+/** 渡夜者默认感应值：来自站内 character-info，固定不随等级/泪滴转职变化 */
+export const NIGHTFARER_ARCANE_PRESETS = [
+  { name: '追踪者', arcane: 10 },
+  { name: '守护者', arcane: 10 },
+  { name: '铁之眼', arcane: 13 },
+  { name: '女爵', arcane: 11 },
+  { name: '无赖', arcane: 10 },
+  { name: '隐士', arcane: 10 },
+  { name: '复仇者', arcane: 12 },
+  { name: '执行者', arcane: 28 },
+  { name: '学者', arcane: 50 },
+  { name: '送葬者', arcane: 10 },
+] as const;
