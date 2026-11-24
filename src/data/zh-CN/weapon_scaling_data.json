@@ -152,6 +152,46 @@
       "status": "7/65/38"
     },
     {
+      "name": "特殊：蚁刺细剑",
+      "category": "刺剑",
+      "poise": "4",
+      "note": "原生猩红腐败。寒冷、血、毒质变的基础攻击力均从 88 降至 80，折减约 9.1%。",
+      "damageLayouts": {
+        "none": { "base": { "physical": 88 } },
+        "fire": { "base": { "physical": 44, "fire": 44 } },
+        "lightning": { "base": { "physical": 44, "lightning": 44 } },
+        "magic": { "base": { "physical": 44, "magic": 44 } },
+        "cold": { "base": { "physical": 40, "magic": 40 } },
+        "holy": { "base": { "physical": 44, "holy": 44 } },
+        "blood": { "base": { "physical": 80 } },
+        "poison": { "base": { "physical": 80 } }
+      },
+      "specialAffinities": {
+        "none": [8, 76, 0, 0, 0],
+        "fire": [8, 76, 0, 0, 0],
+        "lightning": [8, 76, 0, 0, 0],
+        "magic": [7, 65, 26, 0, 0],
+        "cold": [7, 65, 26, 0, 0],
+        "holy": [7, 65, 0, 26, 0],
+        "blood": [7, 65, 0, 0, 38],
+        "poison": [7, 65, 0, 0, 38]
+      }
+    },
+    {
+      "name": "特殊：结冰针",
+      "category": "刺剑",
+      "poise": "4",
+      "note": "原生冻伤。寒冷质变为 57 物理＋19 魔力，基础攻击力折减约 9.5%，两个分项均走 0 号曲线。",
+      "damageLayouts": {
+        "none": { "base": { "physical": 84 } },
+        "cold": { "base": { "physical": 57, "magic": 19 }, "curves": { "magic": "physical" } }
+      },
+      "specialAffinities": {
+        "none": [8, 76, 0, 0, 0],
+        "cold": [7, 65, 26, 0, 0]
+      }
+    },
+    {
       "name": "重刺剑",
       "poise": "5.5",
       "physical": "38/58",
@@ -178,6 +218,48 @@
       "physical": "13/73",
       "elemental": "12/63/26",
       "status": "12/63/39"
+    },
+    {
+      "name": "特殊：铁陨石刀",
+      "category": "刀",
+      "poise": "5",
+      "note": "原生魔力与出血。血质变仍有物理和魔力两项，基础攻击力由 52＋33 降至 33＋21，折减约 36.5%。",
+      "damageLayouts": {
+        "none": { "base": { "physical": 52, "magic": 33 } },
+        "magic": { "base": { "physical": 35, "magic": 50 } },
+        "blood": { "base": { "physical": 33, "magic": 21 } }
+      },
+      "specialAffinities": {
+        "none": [12, 63, 26, 0, 0],
+        "magic": [12, 63, 26, 0, 0],
+        "blood": [10, 55, 26, 0, 39]
+      }
+    },
+    {
+      "name": "特殊：蛇骨刀",
+      "category": "刀",
+      "poise": "5",
+      "note": "原生中毒。寒冷质变的基础攻击力折减约 8.3%，物理和魔力均走 0 号曲线。血、毒质变折减约 9.7%。",
+      "damageLayouts": {
+        "none": { "base": { "physical": 72 } },
+        "fire": { "base": { "physical": 36, "fire": 36 } },
+        "lightning": { "base": { "physical": 36, "lightning": 36 } },
+        "magic": { "base": { "physical": 36, "magic": 36 } },
+        "cold": { "base": { "physical": 33, "magic": 33 }, "curves": { "magic": "physical" } },
+        "holy": { "base": { "physical": 36, "holy": 36 } },
+        "blood": { "base": { "physical": 65 } },
+        "poison": { "base": { "physical": 65 } }
+      },
+      "specialAffinities": {
+        "none": [13, 73, 0, 0, 0],
+        "fire": [13, 73, 0, 0, 0],
+        "lightning": [13, 73, 0, 0, 0],
+        "magic": [12, 63, 26, 0, 0],
+        "cold": [12, 63, 26, 0, 0],
+        "holy": [12, 63, 0, 26, 0],
+        "blood": [12, 63, 0, 0, 39],
+        "poison": [12, 63, 0, 0, 39]
+      }
     },
     {
       "name": "双头剑",
@@ -429,6 +511,20 @@
       "physical": "54/44",
       "elemental": "46/38/30",
       "status": "46/38/45"
+    },
+    {
+      "name": "特殊：冻壳斧",
+      "category": "斧",
+      "poise": "5",
+      "note": "原生冻伤。寒冷质变为 43 物理＋43 魔力，基础攻击力折减约 9.5%，两个分项均走 0 号曲线。",
+      "damageLayouts": {
+        "none": { "base": { "physical": 95 } },
+        "cold": { "base": { "physical": 43, "magic": 43 }, "curves": { "magic": "physical" } }
+      },
+      "specialAffinities": {
+        "none": [54, 44, 0, 0, 0],
+        "cold": [33, 50, 29, 0, 0]
+      }
     },
     {
       "name": "特殊：波纹剑",
@@ -756,6 +852,32 @@
       "physical": "28/64",
       "elemental": "24/55/28",
       "status": "24/55/42"
+    },
+    {
+      "name": "特殊：毒蛇牙",
+      "category": "钩爪",
+      "poise": "4",
+      "note": "原生中毒。寒冷质变的基础攻击力由 63 降至 58，折减约 7.9%。血、毒质变降至 57，折减约 9.5%。",
+      "damageLayouts": {
+        "none": { "base": { "physical": 63 } },
+        "fire": { "base": { "physical": 32, "fire": 32 } },
+        "lightning": { "base": { "physical": 32, "lightning": 32 } },
+        "magic": { "base": { "physical": 32, "magic": 32 } },
+        "cold": { "base": { "physical": 29, "magic": 29 } },
+        "holy": { "base": { "physical": 32, "holy": 32 } },
+        "blood": { "base": { "physical": 57 } },
+        "poison": { "base": { "physical": 57 } }
+      },
+      "specialAffinities": {
+        "none": [28, 64, 0, 0, 0],
+        "fire": [28, 64, 0, 0, 0],
+        "lightning": [28, 64, 0, 0, 0],
+        "magic": [24, 55, 28, 0, 0],
+        "cold": [24, 55, 28, 0, 0],
+        "holy": [24, 55, 0, 28, 0],
+        "blood": [24, 55, 0, 0, 42],
+        "poison": [24, 55, 0, 0, 42]
+      }
     },
     {
       "name": "特大武器",
